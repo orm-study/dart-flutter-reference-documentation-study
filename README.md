@@ -1,7 +1,7 @@
 # dart-flutter-reference-documentation-study
 공식 문서를 기반으로 한 Dart&Flutter 스터디입니다. 매주 구술시험, 필기시험, 발표를 통해 학습 내용을 평가합니다.
 
-`참여 인원 7명`
+`참여 인원 8명`
 
 
 
