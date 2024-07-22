@@ -1,0 +1,685 @@
+# 이터러블 컬렉션 Iterable Collections
+
+이 코드랩에서는 List나 Set과 같은 Iterbale 클래스를 구현하는 컬렉션을 사용하는 방법에 대해서 배웁니다.
+
+Iterbale은 모든 종류의 Dart 애플리케이션을 위한 기본적인 구성 요소이며 아마 눈치채지 못했더라도 이미 사용하고 있을 겁니다.
+
+이 코드랩은 이를 최대한 활용하는 것에 도움이 됩니다.
+
+내장된 DartPad 편집기를 사용하면 예제 코드를 실행하고 연습을 완료하여 지식을 시험할 수 있습니다.
+
+이 코드랩을 활용하려면 Dart 문법에 대한 기본적인 지식이 있어야 합니다.
+
+이 코드랩에서는 다음과 같은 자료를 다룹니다:
+
+- Iterable의 요소를 읽는 방법.
+
+- Iterable의 요소가 조건을 충족하는지 확인하는 방법.
+
+- Iterable의 내용을 필터링하는 방법.
+
+- Iterable의 내용을 다른 값에 매핑하는 방법.
+
+이 코드랩을 완료하는 데 예상되는 시간 : 60분.
+
+```
+노트
+
+이 페이지는 내장된 DartPad를 사용하여 예제와 연습을 표시합니다.
+
+DartPad 대신 빈 상자가 표시되면 DartPad 문제 해결 페이지로 이동하세요.
+```
+
+이 Codelab의 연습에는 부분적으로 완성된 코드 스니펫이 있습니다. DartPad를 사용하여 코드를 완성하고 실행 버튼을 클릭하여 지식을 시험할 수 있습니다. 메인 함수나 그 이하의 테스트 코드를 편집하지 마세요.
+
+도움이 필요하면 힌트나 솔루션 드롭다운을 확장하세요.
+
+## 컬렉션이란? What are collections?
+
+컬렉션이란 요소라고 불리는 객체 그룹을 나타내는 객체입니다. Iterable은 일종의 컬렉션입니다.
+
+컬렉션은 비어있을 수도 있고 많은 요소를 포함할 수도 있습니다. 목적에 따라 컬렉션의 구조와 구현은 다를 수 있습니다. 다음은 가장 일반적인 컬렉션 타입 중 일부입니다.
+
+- List: 인덱스로 요소를 읽는 데 사용됩니다.
+
+- Set: 한 번만 발생할 수 있는 요소를 포함하는 데 사용됩니다.
+
+- Map: 키를 사용하여 요소를 읽는 데 사용됩니다.
+
+## Iterable이란? What is an Iterable?
+
+Iterable은 순차적으로 접근할 수 있는 요소의 컬렉션입니다.
+
+Dart에서 Iterable은 추상 클래스이고 그것은 직접 인스턴스화할 수 없다는 것을 의미합니다. 그러나, 새 List 또는 Set을 생성하여 새 Iterable을 생성할 수 있습니다.
+
+List와 Set은 둘 다 Iterable이므로 Iterable 클래스와 같은 메서드와 속성을 갖고 있습니다.
+
+Map은 구현에 따라 내부적으로 다른 데이터 구조를 사용합니다. 예를 들어, HashMap은 키를 사용하여 요소(값이라고도 하는)를 얻는 해시 테이블을 사용합니다.
+
+Map의 요소는 Map의 항목 또는 값 속성을 사용하여 Iterable 객체로 읽을 수도 있습니다.
+
+아래의 예제는 int의 Iterable이기도 한 int의 List를 보여줍니다.
+
+```dart
+Iterable<int> iterable = [1, 2, 3];
+```
+
+List와의 차이점은 Iterable을 사용하면, 인덱스로 요소를 읽는 것이 효율적이라고 보장할 수 없다는 것입니다. List와 달리 Iterable에는 [] 연산자가 없습니다.
+
+예를 들어, 다음과 같은 유효하지 않은 코드를 생각해보세요.
+
+```dart
+Iterable<int> iterable = [1, 2, 3];
+int value = iterable[1];
+```
+
+[]를 사용하여 요소를 읽으면 컴파일러는 '[]' 연산자가 Iterable 클래스에 대해 정의되지 않았음을 알려줍니다. 이것은 이런 경우에 [index]를 사용할 수 없음을 의미합니다.
+
+대신 해당 위치에 도달할 때까지 반복 가능한 요소를 단계별로 실행하는 elementAt()을 사용하여 요소를 읽을 수 있습니다.
+
+```dart
+Iterable<int> iterable = [1, 2, 3];
+int value = iterable.elementAt(1);
+```
+
+Iterable의 요소에 접근하는 방법에 대해 자세히 알아보려면 다음 섹션을 계속 진행하세요.
+
+## 요소 읽기 Reading elements
+
+for-in 반복문을 사용하여 iterable의 요소를 순차적으로 읽을 수 있습니다.
+
+## 예시: for-in 반복문 사용 Example: Using a for-in loop
+
+다음 예제는 for-in 반복문을 사용하여 요소를 읽는 방법을 보여줍니다.
+
+```dart
+void main() {
+  const iterable = ['Salad', 'Popcorn', 'Toast'];
+  for (final element in iterable) {
+    print(element);
+  }
+}
+```
+
+```
+자세히
+
+for-in 반복문은 내부적으로 iterator을 사용합니다. 그러나 Iterator API가 직접 사용되는 것은 거의 볼 수 없습니다.
+for-in은 읽고 이해하기가 쉬우며 오류가 발생할 가능성이 적기 때문입니다.
+```
+
+```
+주요 용어
+- Iterable: Dart의 Iterable 클래스
+- Iterator: Iterable 객체에서 요소를 읽기 위해 for-in이 사용하는 객체
+- for-in 반복문: Iterable에서 요소를 순차적으로 읽는 쉬운 방법입니다.
+```
+
+## 예시: 첫 요소와 마지막 요소 사용
+
+어떤 경우에는 Iterable의 첫 번째 또는 마지막 요소에만 접근하는 것을 원합니다.
+
+Iterable 클래스를 사용하면 요소에 직접 접근할 수 없으므로 iterable[0]를 호출하여 첫 번째 요소에 접근할 수 없습니다. 대신, 첫번째 요소를 가져오는 first를 사용할 수 있습니다.
+
+또한 Iterable 클래스를 사용하면 [] 연산자로 마지막 요소를 사용할 수 없지만, last 속성을 사용할 수 있습니다.
+
+```
+경고
+
+Iterable의 마지막 요소에 접근하려면 다른 모든 요소를 단계별로 거쳐야 하기 때문에 last는 느릴 수 있습니다. 빈 Iterable에 first 또는 last를 사용하면 StateError가 발생합니다.
+```
+
+```dart
+void main() {
+  Iterable<String> iterable = const ['Salad', 'Popcorn', 'Toast'];
+  print('The first element is ${iterable.first}');
+  print('The last element is ${iterable.last}');
+}
+```
+
+이 예시에서는 first와 last를 사용하여 Iterable의 첫 번째 요소와 마지막 요소를 가져오는 방법을 살펴보았습니다. 또한 조건을 만족하는 첫 번째 요소를 찾는 것도 가능합니다. 다음 섹션에서는 firstWhere() 메서드를 사용하여 이를 수행하는 방법을 보여줍니다.
+
+## 예시: firstWhere() 사용 Example: Using firstWhere()
+
+Iterable의 요소에 순차적으로 접근이 가능한 것과 첫 번째 또는 마지막 요소를 쉽게 얻을 수 있다는 것을 이미 살펴봤습니다.
+
+이제, 특정 조건을 만족하는 첫 번째 요소를 찾는 firstWhere()를 사용하는 방법에 대해 배웁니다. 이 메서드는 입력이 특정 조건을 만족하면 true를 반환하는 함수인 predicate를 전달해야합니다.
+
+```dart
+String element = iterable.firstWher((element) => element.length > 5);
+```
+
+예를 들어, 다섯 자를 초과하는 첫 String을 찾길 원한다면 요소의 크기가 5보다 클 때 true를 반환하는 predicate를 전달해야 합니다.
+
+다음 예제를 실행하여 firstWhere()가 어떻게 작동하는지 확인하세요. 모든 함수가 동일한 결과를 제공할 것이라고 생각하시나요?
+
+```dart
+bool predicate(String item) {
+  return item.length > 5;
+}
+
+void main() {
+  const items = ['Salad', 'Popcorn', 'Toast', 'Lasagne'];
+
+  // 간단한 표현으로 찾을 수 있습니다:
+  var foundItem1 = items.firstWhere((item) => item.length > 5);
+  print(foundItem1);
+
+  // 또는 함수 블록을 사용해 보십시오:
+  var foundItem2 = items.firstWhere((item) {
+    return item.length > 5;
+  });
+  print(foundItem2);
+
+  // 또는 함수 참조를 전달할 수도 있습니다:
+  var foundItem3 = items.firstWhere(predicate);
+  print(foundItem3);
+
+  // 값을 찾을 수 없는 경우 `orElse` 함수를 사용할 수도 있습니다!
+  var foundItem4 = items.firstWhere(
+    (item) => item.length > 10,
+    orElse: () => 'None!',
+  );
+  print(foundItem4);
+}
+```
+
+이 예시에서, predicate를 작성하는 세 가지 다른 방법을 볼 수 있습니다.
+
+- 표현식: 테스트 코드에는 화살표 구문을 사용하는 한 줄이 있습니다.
+
+- 블록: 테스트 코드에는 대괄호와 반환문 사이에 여러 줄이 있습니다.
+
+- 함수: 테스트 코드는 firstWhere() 메서드를 매개변수로 전달하는 외부 함수에 있습니다.
+
+옳고 그른 방법은 없습니다. 가장 적합한 방식과 코드를 더 읽고 이해하기 쉬운 방법을 사용하세요.
+
+마지막 예시에서는 요소를 찾을 수 없을 때 대안을 제시하는 선택적 명명된 매개변수 onElse를 사용하여 firstWhere()를 호출합니다. 이 경우에는, 'None!'이라는 텍스트를 반환합니다. 제공된 조건을 만족하는 요소가 없기 때문입니다.
+
+```
+노트
+
+테스트 predicate를 만족하는 요소가 없고 onElse 매개변수가 제공되지 않으면, firstWhere() 메서드는 StateError가 발생합니다.
+```
+
+```
+빠른 리뷰
+
+Iterable의 요소는 반드시 순차적으로 접근해야합니다.
+
+모든 요소를 순회하는 가장 쉬운 방법은 for-in 반복문을 사용하는 것입니다.
+
+처음과 마지막 요소를 얻기 위해 first, last getter를 사용할 수 있습니다.
+
+firstWhere()를 사용하여 조건을 만족하는 첫 번째 요소를 찾을 수 있습니다.
+
+표현식, 블록, 함수로 테스트 predicate를 작성할 수 있습니다.
+
+핵심 용어:
+
+predicate: 특정한 조건을 만족하면 true를 반환하는 함수입니다.
+```
+
+## 연습: 테스트 predicate를 작성하는 연습 Exercise: Practice writing a test predicate
+
+다음 연습은 부분적으로 완료된 코드 스니펫을 포함하는 실패한 단위 테스트입니다. 테스트를 통과하도록 코드를 작성하여 연습을 완료하십시오. main()을 구현할 필요는 없습니다.
+
+이 연습은 sigleWhere()을 소개합니다. 이 메서드는 firstWhere()와 비슷하게 작동하지만 이 경우 predicate를 만족하려면 Iterable의 단 하나의 요소만 필요합니다. Iterable의 요소가 두 개 이상이거나 predicate를 만족하지 않는 경우에는 StateError 예외가 발생합니다.
+
+```
+경고
+singleWhere()는 마지막 요소까지 전체 Iterable을 순회합니다. 이는 Iterable이 무한하거나 대규모 요소 컬렉션을 포함하는 경우 문제가 발생할 수 있습니다.
+
+목표는 다음 조건을 만족하는 singleWhere()에 대한 predicate를 구현하는 것입니다.
+```
+
+- 문자 'a'를 포함하는 요소.
+
+- 문자 'M'으로 시작하는 요소.
+
+테스트 데이터의 모든 요소는 string입니다; 도움이 필요하면 class 문서를 확인해 보세요.
+
+## 조건 확인 Checking conditions
+
+Iterable을 사용하여 작업할 때 컬렉션의 모든 요소가 특정 조건을 충족하는지 확인해야 하는 경우가 있습니다.
+
+다음과 같은 for-in 반복문을 사용하여 솔루션을 작성하고 싶을 수도 있습니다.
+
+```dart
+for (final item in items) {
+  if (item.length < 5) {
+    return false;
+  }
+}
+return true;
+```
+
+그러나 every() 메서드를 사용하여 동일한 작업을 수행할 수 있습니다.
+
+```dart
+return items.every((item) => item.length >= 5);
+```
+
+every() 메서드를 사용하면 더 읽기 쉽고 간결하며 오류가 발생할 가능성이 적은 코드를 작성할 수 있습니다.
+
+## 예시: any()와 every() 사용 Example: Using any() and every()
+
+Iterable 클래스는 조건을 확인하는 데 사용할 수 있는 두 가지 메서드를 제공합니다.
+
+- any(): 하나 이상의 요소가 조건을 만족하면 true를 반환합니다.
+
+- every(): 모든 요소가 조건을 만족하면 true를 반환합니다.
+
+이 연습을 실행하여 작동하는 모습을 확인하세요.
+
+```dart
+void main() {
+  const items = ['Salad', 'Popcorn', 'Toast'];
+
+  if (items.any((item) => item.contains('a'))) {
+    print('At least one item contains "a"');
+  }
+
+  if (items.every((item) => item.length >= 5)) {
+    print('All items have length >= 5');
+  }
+}
+```
+
+예시에서 any()는 최소한 하나의 요소에 문자 a가 포함되어 있는지 확인하고, every()는 모든 요소의 길이가 5보다 크거나 같은지 확인합니다.
+
+코드를 실행한 후 false를 반환하도록 any()의 predicate를 변경해 보세요.
+
+```dart
+if (items.any((item) => item.contains('Z'))) {
+  print('At least one item contains "Z"');
+} else {
+  print('No item contains "Z"');
+}
+```
+
+또한 any()를 사용하여 Iterable의 어떤 요소도 특정 조건을 만족하지 않는지 확인할 수 있습니다.
+
+## 연습: Iterable이 조건을 만족하는지 확인 Exercise: Verify that an Iterable satisfies a condition
+
+다음 연습에서는 이전 예시에서 설명한 any() 및 every() 메서드를 사용하는 연습을 제공합니다. 이 경우, 회원 필드 age가 있는 사용자 객체로 표시되는 사용자 그룹으로 작업합니다.
+
+any()와 every()를 사용하여 두 함수를 구현합니다:
+
+- 파트 1: anyUserUnder18() 구현.
+  - 적어도 한 사용자가 17세 이하이면 true를 반환.
+
+- 파트 2: everyUserOver13() 구현.
+  - 모든 유저가 13세 이상이면 true를 반환.
+
+```
+빠른 리뷰
+
+for-in 반복문을 사용하여 조건을 확인할 수 있지만 더 나은 방법이 있습니다.
+
+any() 메서드를 사용하면 요소가 조건을 만족하는지 확인할 수 있습니다.
+
+every() 메서드를 사용하면 모든 요소가 조건을 만족하는지 확인할 수 있습니다.
+```
+
+## 필터링 Filtering
+
+이전 섹션에서는 특정 조건을 만족하는 요소를 찾는 데 도움이 될 수 있는 firstWhere() 또는 singleWhere()와 같은 메서드를 다루었습니다.
+
+하지만 특정 조건을 만족하는 모든 요소를 ​​찾고 싶다면 어떻게 해야 할까요? where() 메서드를 사용하여 이를 수행할 수 있습니다.
+
+```dart
+var evenNumbers = numbers.where((number) => number.isEven);
+```
+
+이 예시에서 numbers에는 여러 int 값이 있는 Iterable이 포함되어 있으며 where()는 짝수인 모든 숫자를 찾습니다.
+
+where()의 출력은 또 다른 Iterable이므로 이를 반복하거나 다른 Iterable 메서드를 적용하는 데 사용할 수 있습니다. 다음 예시에서는 where()의 출력이 for-in 반복문 내에서 직접 사용됩니다.
+
+```dart
+var evenNumbers = numbers.where((number) => number.isEven);
+
+for (final number in evenNumbers) {
+  print('$number is even');
+}
+```
+
+## 예시: where() 사용 Example: Using where()
+
+다음 예시를 실행하여 where()를 any()와 같은 다른 메서드와 함께 사용하는 방법을 확인하세요.
+
+```dart
+void main() {
+  var evenNumbers = const [1, -2, 3, 42].where((number) => number.isEven);
+
+  for (final number in evenNumbers) {
+    print('$number is even.');
+  }
+
+  if (evenNumbers.any((number) => number.isNegative)) {
+    print('evenNumbers contains negative numbers.');
+  }
+
+  // predicate를 만족하는 요소가 없으면 출력은 비어 있습니다.
+  var largeNumbers = evenNumbers.where((number) => number > 1000);
+
+  if (largeNumbers.isEmpty) {
+    print('largeNumbers is empty!');
+  }
+}
+```
+
+이 예시에서는, where()를 사용하여 짝수인 모든 숫자를 찾은 다음 any()를 사용하여 결과에 음수가 포함되어 있는지 확인합니다.
+
+예시 뒷부분에서, 1000보다 큰 모든 숫자를 찾기 위해 where()를 다시 사용합니다. 숫자가 없기 때문에 결과는 빈 Iterable입니다.
+
+```
+노트
+
+where()의 predicate를 만족하는 요소가 없으면 메서드는 빈 Iterable을 반환합니다. singleWhere()나 firstWhere()와 달리 where()는 StateError 예외를 발생시키지 않습니다.
+```
+
+## 예시: takeWhile 사용 Example: Using takeWhile
+
+takeWhile()과 skipWhile() 메서드는 Iterable에서 요소를 필터링하는 데도 도움이 될 수 있습니다.
+
+아래 예시를 실행하여 어떻게 takeWhile()과 skipWhile()이 숫자가 포함된 Iterable을 분할하는지 확인하세요.
+
+```dart
+void main() {
+  const numbers = [1, 3, -2, 0, 4, 5];
+
+  var numbersUntilZero = numbers.takeWhile((number) => number != 0);
+  print('Numbers until 0: $numbersUntilZero');
+
+  var numbersStartingAtZero = numbers.skipWhile((number) => number != 0);
+  print('Numbers starting at 0: $numbersStartingAtZero');
+}
+```
+
+이 예시에서 takeWhile()은 predicate를 만족하는 요소 이전의 모든 요소를 ​​포함하는 Iterable을 반환합니다. 반면에, skipWhile()은 predicate를 만족하지 않는 첫 번째 요소를 포함하여 이후의 모든 요소를 ​​포함하는 Iterable을 반환합니다.
+
+예시를 실행한 후 takeWhile()을 변경하여 첫 번째 음수에 도달할 때까지 요소를 가져옵니다.
+
+```dart
+var numbersUntilNegative = numbers.takeWhile((number) => !number.isNegative);
+```
+
+조건 number.isNegative가 !로 부정되는 것에 유의하세요.
+
+## 연습: 리스트의 요소를 필터링 Exercise: Filtering elements from a list
+
+다음 연습에서는 이전 연습의 User 클래스와 함께 where() 메서드를 사용하는 연습을 제공합니다.
+
+where()를 사용하여 다음 두 함수를 구현하세요.
+
+- 파트 1: filterOutUnder21()를 구현.
+  - 21세 이상인 모든 사용자를 포함하는 Iterable을 반환.
+
+- 파트 2: findShortNamed()를 구현.
+  - 이름의 길이가 3 이하인 모든 사용자를 포함하는 Iterable을 반환.
+
+```
+빠른 리뷰
+
+where()를 사용하여 Iterable의 요소를 필터링합니다.
+
+where()의 출력은 또 다른 Iterable입니다.
+
+조건을 만족할 때까지, 혹은 만족된 후의 요소를 얻으려면 takeWhile()과 skipWhile()을 사용하세요.
+```
+
+## 매핑 Mapping
+
+map() 메서드를 사용하여 Iterable을 매핑하면 각요소에 함수를 적용하여 각 요소를 새 요소로 바꿀 수 있습니다.
+
+```dart
+Iterable<int> output = numbers.map((number) => number * 10);
+```
+
+이 예시에서는 Iterable numbers의 각 요소에 10을 곱합니다.
+
+또한 map()을 사용하여 요소를 다른 객체로 변환할 수 있습니다. 예를 들어, 다음 예제에서 볼 수 있듯이 모든 int를 String으로 변환할 수 있습니다.
+
+```dart
+Iterable<String> output = numbers.map((number) => number.toString());
+```
+
+```
+노트
+
+map()은 지연된 Iterable을 반환합니다. 즉, 제공된 함수는 오직 요소가 반복될 때만 호출됩니다.
+```
+
+## 예시: map()을 사용하여 요소를 변경
+
+아래의 예시를 실행하여 map()을 사용해 Iterable의 모든 요소에 2를 곱하는 방법을 확인하세요. 출력이 어떻게 될 것이라 생각하시나요?
+
+```dart
+void main() {
+  var numbersByTwo = const [1, -2, 3, 42].map((number) => number * 2);
+  print('Numbers: $numbersByTwo');
+}
+```
+
+## 연습: 다른 타입으로 매핑 Exercise: Mapping to a different type
+
+이전 예시에서, Iterable의 요소에 2를 곱했습니다. 그 연산의 입력과 출력은 둘 다 int의 Iterable이었습니다.
+
+아래의 연습에서, 코드는 User의 Iterable을 사용하여 각 사용자의 이름과 나이를 포함하는 문자열이 포함된 Iterable을 반환해야합니다.
+
+Iterable의 각 문자열은 반드시 다음 형식과 같아야 합니다. '{name} is {age}' - 예를 들면 'Alice is 21'.
+
+```
+빠른 리뷰
+
+map()은 Iterable의 모든 요소에 함수를 적용합니다.
+
+map()의 출력은 또 다른 Iterable입니다.
+
+함수는 Iterable이 반복될 때까지 평가되지 않습니다.
+```
+
+## 연습: 모든 것을 하나로 합치기 Exercise: Putting it all together
+
+이제 마지막 연습으로 배운 것들을 연습해볼 시간입니다.
+
+이 연습에서는 문자열을 사용하는 생성자가 있는 EailAddress 클래스를 제공합니다. 또 다른 제공되는 함수는 이메일 주소가 유효한지 확인하는 isEmailAddress()입니다.
+
+| 생성자/함수 | 타입 시그니처 | 설명 |
+|---|---|---|
+| EmailAddress() | EmailAddress(String address) | 지정된 주소에 대한 EmailAddress를 생성합니다. |
+| isValidEmailAddress() | bool isValidEmailAddress(EmailAddress) | 만약 제공된 EmailAddress가 유효하면 true를 반환합니다.  |
+
+다음 코드를 작성하세요:
+
+파트 1: parseEmailAddresses()을 구현.
+  - 이메일 주소를 포함한 Iterable<String>을 받아서 Iterable<EmailAddress>를 반환하는 parseEmailAddress() 함수를 작성하세요.
+  - String을 EmailAddress로 매핑하려면 map() 메서드를 사용하세요.
+  - EmailAddress(String) 생성자를 사용하여 EmailAddress 객체를 생성하세요.
+
+파트 2: anyInvalidEmailAddress()를 구현.
+  - Iterable<EmailAddress>를 받아서 Iterable 안의 EmailAddress가 유효하지 않으면 true를 반환하는 함수 anyInvalidEmailAddress()를 작성하세요.
+  - 제공된 함수 isValidEmailAddress()와 함께 any() 메서드를 사용하세요.
+
+파트 3: validEmailAddresses()를 구현.
+  - Iterable<EmailAddress>를 받아서 유효한 주소만 포함하는 다른 Iterable<EmailAddress>를 반환하는 함수 anyInvalidEmailAddress()를 작성하세요.
+  - Iterable<EmailAddress>를 필터링하려면 where() 메서드를 사용하세요.
+  - EmailAddress가 유효한지 평가하려면 제공된 함수 isValidEmailAddress()를 사용하세요.
+
+## 다음 단계 What's next
+
+축하합니다. 코드랩을 완료했습니다! 더 자세히 알아보고 싶은 경우, 다음 단계에 대한 몇 가지 제안을 참고하세요.
+
+  - DartPad로 학습하기.
+  - 다른 코드랩을 시도하기.
+  - 이 코드랩에서 다루지 않은 메서드들에 대해 알아보고 싶다면 Iterable API 레퍼런스를 읽어보세요.
+
+# 제네릭 Generics
+
+기본 배열 타입인 List에 대한 API 문서를 본 적이 있다면, 이것의 타입이 실제로는 List<E>라는 것을 알 수 있습니다. <...> 표기법은 List를 제네릭(혹은 매개변수화 된) 타입, 즉 형식 타입 매개변수를 가진 타입으로 표시합니다. 관례적으로, 대부분의 타입 변수들은 E, T, S, K, V와 같은 단일 문자 이름을 가집니다.
+
+## 왜 제네릭을 사용하는가? Why use generics?
+
+제네릭은 타입 안전성을 위해 요구되는 경우가 많지만, 제네릭은 단지 코드를 실행하는 것보다 더 많은 이점이 있습니다.
+
+- 제네릭 타입을 적절하게 지정하면 더 나은 코드가 생성됩니다.
+- 제네릭 타입을 사용하면 코드의 중복을 제거할 수 있습니다.
+
+오직 문자열만 포함하도록 하는 리스트를 의도한다면 List<String>(문자열 리스트라고 읽으세요)로 선언할 수 있습니다. 이렇게 하면 동료 프로그래머와 도구가 리스트에 문자열이 아닌 것이 할당되었을 경우 이것이 실수임을 발견할 수 있습니다. 여기에 예시가 있습니다:
+
+```dart
+var names = <String>[];
+
+names.addAll(['Seth', 'Kathy', 'Lars']);
+
+names.add(42); // 오류
+```
+
+제네릭을 사용하는 도다른 이유는 코드의 중복을 제거하기 위해서 입니다. 제네릭을 사용하면 여러 타입 간에 단일 인터페이스와 구현을 공유하는 동시에, 정적 분석을 활용할 수 있습니다. 예를 들어, 객체를 캐싱하기 위한 인터페이스를 만든다고 가정해봅시다:
+
+```dart
+abstract class ObjectCache {
+  Object getByKey(String key);
+  
+  void setByKey(String key, Object value);
+}
+```
+
+이 인터페이스의 문자열 버전이 필요한 것을 발견했을 때, 또 다른 인터페이스를 만들 수 있습니다.
+
+```dart
+abstract class StringCache {
+  String getByKey(String key);
+  
+  void setByKey(String key, String value);
+}
+```
+
+나중에 당신은 이 인터페이스의 숫자 버전이 필요한 것을 발견했을 때... 아이디어를 얻었습니다.
+
+제네릭 타입을 사용하면 이 모든 인터페이스를 만드는 대신에 타입 매개변수를 가지는 단일 인터페이스를 만들 수 있습니다:
+
+```dart
+abstract class Cache<T> {
+  T getByKey(String key);
+  
+  void setByKey(String key, T value);
+}
+```
+
+위의 코드에서 T는 대체가능한 타입입니다. 개발자가 나중에 정의할 타입으로 생각되는 임시 대체 타입입니다.
+
+## 컬렉션 리터럴 사용 Using collection literals
+
+List, Set, Map 리터럴은 매개변수화될 수 있습니다. 매개변수화된 리티럴은 여는 괄호 앞에 <type>(list나 set의 경우) 또는 <keyType, valueType>(map의 경우) 추가한다는 점을 제외하면 이미 본 리터럴과 같습니다. 여기에 타입 리터럴을 사용하는 예시가 있습니다.
+
+```dart
+var names = <String>['Seth', 'Kathy', 'Lars'];
+
+var uniqueNames = <String>{'Seth', 'Kathy', 'Lars'};
+
+var pages = <String, String>{
+  'index.html': 'Homepage',
+  'robots.txt': 'Hints for web robots',
+  'humans.txt': 'We are people, not machines'
+};
+```
+
+## 생성자와 함께 매개변수화된 타입 사용 Using parameterized types with constructors
+
+생성자를 사용할 때 하나 이상의 타입을 지정하려면, 클래스 이름 바로 다음에 타입을 꺾쇠괄호(<...>)안에 넣으세요. 예를 들어:
+
+```dart
+var nameSet = Set<String>.from(names);
+```
+
+다음 코드는 정수 키와 View 타입의 값을 가지는 맵을 생성합니다.
+
+```dart
+var views = Map<int, View>();
+```
+
+## 제네릭 컬렉션과 여기에 포함된 타입 Generic collections and the types they contain
+
+Dart의 제네릭 타입은 구체화 되었습니다. 즉 런타임에 타입 정보를 전달한다는 의미입니다. 예를 들어 컬렉션의 타입을 테스트할 수 있습니다:
+
+```dart
+var names = <String>[];
+
+names.addAll(['Seth', 'Kathy', 'Lars']);
+
+print(names is List<String>); // true
+```
+
+```
+노트
+
+대조적으로 자바의 제네릭은 erasure를 사용합니다. 즉 제네릭 타입 매개변수가 런타임에 제거된다는 것을 의미합니다. 
+자바에서 객체가 리스트인지 테스트할 수 있지만 객체가 List<String>인지 테스트할 수는 없습니다.
+```
+
+## 매개변수화된 타입 제한 Restricting the parameterized type
+
+제네릭 타입을 구현할 때, 인자처럼 제공될 수 있는 타입을 제한하기를 원한다면 인자는 반드시 특정 타입의 하위 타입이어야 합니다. extends를 사용하여 이 작업을 수행할 수 있습니다.
+
+일반적인 사용 예시는 타입을 Object(기본 값인 Object? 대신)의 하위 타입으로 만들어 타입이 null을 허용하지 않도록 보장하는 것입니다.
+
+```dart
+class Foo<T extends Object> {
+  // Foo에 제공된 T 타입은 반드시 null을 허용하지 않아야 합니다.
+}
+```
+
+Object 외에 다른 타입과 함께 extends를 사용할 수 있습니다. 여기에 SomeBaseClass를 확장하여 타입 T의 객체에서 SomeBaseClass의 멤버를 호출할 수 있는 예시가 있습니다.
+
+```dart
+class Foo<T extends SomeBaseClass> {
+  // 여기에 구현...
+  String toString() => "Instance of 'Foo<$T>'";
+}
+
+class Extender extends SomeBaseClass {...}
+```
+
+SomeBaseClass나 그 하위 타입을 제네릭 인자로 사용하는 것은 괜찮습니다.
+
+```dart
+var someBaseClassFoo = Foo<SomeBaseClass>();
+
+var extenderFoo = Foo<Extender>();
+```
+
+제네릭 인자를 지정하지 않아도 물론 괜찮습니다.
+
+```dart
+var foo = Foo();
+
+print(foo); // Instance of 'Foo<SomeBaseClass>'
+```
+
+SomeBaseClass 타입으로 지정하지 않으면 오류가 발생합니다.
+
+```dart
+var foo = Foo<Object>();
+```
+
+## 제네릭 메서드 사용 Using generic methods
+
+메서드와 함수 또한 타입 인자를 허용합니다.
+
+```dart
+T first<T>(List<T> ts) {
+  // 초기 작업와 오류 확인을 하세요, 그리고...
+  T tmp = ts[0];
+  
+  // 추가적인 확인과 처리를 하세요...
+  return tmp;
+}
+```
+
+여기 first(<T>) 제네릭 타입 매개변수를 사용하면 여러 위치에서 타입 인자 T를 사용할 수 있습니다.
+
+- 함수의 반환 타입 (T).
+- 인자의 타입 (List<T>).
+- 로컬 변수의 타입 (T tmp).
