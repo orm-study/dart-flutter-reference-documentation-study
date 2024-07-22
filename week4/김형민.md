@@ -1,0 +1,858 @@
+# 믹스인 Mixins
+
+믹스인은 여러 클래스 계층에서 재사용할 수 있는 코드를 정의하는 방법입니다. 이는 멤버 구현을 한꺼번에 제공하기 위한 것입니다.
+
+믹스인을 사용하려면 with 키워드 뒤에 하나 이상의 믹스인 이름을 사용하십시오. 다음 예제에서는 믹스인(또는 믹스인의 하위 클래스인)을 사용하는 두 클래스를 보여줍니다.
+
+```dart
+class Musician extends Performer with Musical {
+  // ···
+}
+
+class Maestro extends Person with Musical, Aggressive, Demented {
+  Maestro(String maestroName) {
+    name = maestroName;
+    canConduct = true;
+  }
+}
+```
+
+믹스인을 정의하려면 mixin선언을 사용하세요. 믹스인과 클래스를 모두 정의해야 하는 드문 경우에는 믹스인 클래스 선언을 사용할 수 있습니다.
+
+믹스인과 믹스인 클래스는 extends절을 가질 수 없으며 생성형 생성자를 선언해서는 안 됩니다.
+
+예를 들어:
+
+```dart
+mixin Musical {
+  bool canPlayPiano = false;
+  bool canCompose = false;
+  bool canConduct = false;
+
+  void entertainMe() {
+    if (canPlayPiano) {
+      print('Playing piano');
+    } else if (canConduct) {
+      print('Waving hands');
+    } else {
+      print('Humming to self');
+    }
+  }
+}
+```
+
+## 믹스인이 자체적으로 호출할 수 있는 멤버 지정 Specify members a mixin can call on itself
+
+때로 믹스인은 메서드 호출이나 필드 접근 가능 여부에 따라 달라지지만, 해당 멤버 자체를 정의할 수는 없습니다(믹스인은 생성자 매개 변수를 사용하여 자신의 필드를 인스턴스화할 수 없기 때문입니다).
+
+다음 섹션에서는 믹스인의 하위 클래스가 믹스인의 동작이 의존하는 멤버를 정의하는 것을 보장하기 위한 다른 전략들을 다룹니다.
+
+## 믹스인에서 추상 멤버 정의 Define abstract members in the mixin
+
+믹스인에서 추상 메서드를 선언하면 믹스인을 사용하는 모든 타입이 해당 동작에 의존하는 추상 메서드를 정의하도록 강제됩니다.
+
+```dart
+mixin Musician {
+  void playInstrument(String instrumentName); // 추상 메서드.
+
+  void playPiano() {
+    playInstrument('Piano');
+  }
+  void playFlute() {
+    playInstrument('Flute');
+  }
+}
+
+class Virtuoso with Musician { 
+  void playInstrument(String instrumentName) { // 하위 클래스가 반드시 정의.
+    print('Plays the $instrumentName beautifully');
+  }  
+}
+```
+
+## 믹스인 하위 클래스의 접근 상태 Access state in the mixin's subclass
+
+추상 멤버를 선언하면 믹스인에서 추상으로 정의된 getter를 호출하여 믹스인의 하위 클래스에 대한 상태에 접근할 수도 있습니다.
+
+```dart
+/// [name] 속성이 있는 모든 유형에 적용할 수 있으며 이에 따라
+/// [hashCode] 및 `==` 연산자의 구현을 제공합니다.
+mixin NameIdentity {
+  String get name;
+
+  int get hashCode => name.hashCode;
+  bool operator ==(other) => other is NameIdentity && name == other.name;
+}
+
+class Person with NameIdentity {
+  final String name;
+
+  Person(this.name);
+}
+```
+
+## 인터페이스 구현 Implement an interface
+
+mixin abstract를 선언하는 것과 유사하게, 실제로 인터페이스를 구현하지 않고 mixin에 implements 절을 추가하면 mixin에 정의된 모든 멤버 종속성을 보장합니다.
+
+```dart
+abstract interface class Tuner {
+  void tuneInstrument();
+}
+
+mixin Guitarist implements Tuner {
+  void playSong() {
+    tuneInstrument();
+
+    print('Strums guitar majestically.');
+  }
+}
+
+class PunkRocker with Guitarist {
+  void tuneInstrument() {
+    print("Don't bother, being out of tune is punk rock.");
+  }
+}
+```
+
+## on 절을 사용하여 상위 클래스 선언 Use the on clause to declare a superclass
+
+on 절은 super 호출이 해결하는 타입을 정의하기 위해 존재합니다. 따라서 믹스인 내부에서 super 호출이 필요한 경우에만 사용해야 합니다.
+
+on 절은 믹스인을 사용하는 모든 클래스가 on 절 안에 있는 타입의 하위 클래스가 되도록 강제합니다. 믹스인이 상위 클래스 안에 있는 멤버에 의존한다면 믹스인이 사용되는 곳에서 멤버들이 사용 가능하다는 것을 보장합니다.
+
+```dart
+class Musician {
+  musicianMethod() {
+    print('Playing music!');
+  }
+}
+
+mixin MusicalPerformer on Musician {
+  perfomerMethod() {
+    print('Performing music!');
+    super.musicianMethod();
+  }
+}
+
+class SingerDancer extends Musician with MusicalPerformer { }
+
+main() {
+  SingerDance().performerMethod();
+}
+```
+
+위의 예시에서 Musician 클래스를 확장 또는 구현한 클래스들만 믹스인 MusicalPerformer를 사용할 수 있습니다. SingerDnacer는 Musician을 확장하므로 SingerDancer는 MusicalPerformer를 믹스인할 수 있습니다.
+
+## Class, mixin, 또는 mixin class? class, mixin, or mixin class?
+
+```
+버전 노트
+
+mixin class 선언은 최소한 3.0 이상의 언어 버전을 요구합니다.
+```
+
+mixin선언은 mixin을 정의합니다. class 선언은 class를 정의합니다. mixin class 선언은 같은 이름과 같은 타입을 사용하는 일반 클래스와 믹스인 모두로 사용할 수 있는 클래스를 정의합니다.
+
+```dart
+mixin class Musician {
+  // ...
+}
+
+class Novice with Musician { // Musician을 mixin으로 사용
+  // ...
+}
+
+class Novice extends Musician { // Musician을 클래스로 사용
+  // ...
+}
+```
+
+클래스나 mixin에 적용되는 모든 제한은 mixin 클래스에 똑같이 적용됩니다.
+
+- mixin은 extends나 with 절을 가질 수 없으며 mixin class 또한 마찬가지입니다.
+
+- 클래스는 on 절을 가질 수 없으며 mixin class 또한 마찬가지입니다.
+
+# 열거된 타입 Enumerated types
+
+열거된 타입(종종 enumerations나 enums로 불리는)은 상수 변수의 고정된 숫자를 표현하기 위해 사용되는 특별한 종류의 클래스입니다.
+
+```
+노트
+
+모든 열거형은 자동으로 Enum 클래스를 확장합니다. 또한 봉인되어 있으므로 하위 클래스화, 구현, 혼합 또는 명시적으로 인스턴스화할 수 없습니다.
+
+추상 클래스와 믹스인은 명시적으로 Enum을 구현하거나 확장할 수 있지만, 열거형 선언에 의해 구현되거나 혼합되지 않는 한 어떤 객체도 실제로 해당 클래스나 믹스인의 유형을 구현할 수 없습니다.
+```
+
+## 간단한 열거형 선언 Declaring simple enums
+
+단순힌 열거형 타입을 선언하려면 enum 키워드를 사용하여 열거되기 원하는 값을 나열하세요.
+
+```dart
+enum Color { red, green, blue }
+```
+
+```
+팁
+
+복사-붙여넣기 오류를 방지하기 위해 열거형 타입을 선언할 때 후행 쉼표를 사용할 수도 있습니다.
+```
+
+## 향상된 열거형 선언 Declaring enhanced enums
+
+Dart에서는 또한 enum 선언을 통해 필드, 메서드 및 고정된 수의 알려진 상수 인스턴스로 제한되는 const 생성자를 사용하여 클래스를 선언할 수 있습니다.
+
+향상된 enum을 선언하려면 클래스와 비슷한 문법을 따르지만 추가적인 요구사항이 있습니다.
+
+- mixin에 의해 추가된 변수를 포함한 인스턴스 변수는 반드시 final이어야 합니다.
+- 모든 생성형 생성자는 반드시 상수여야 합니다.
+- 팩토리 생성자는 고정되고 알려진 열거형 인스턴스 중 하나만 반환할 수 있습니다.
+- Enum은 자동으로 확장되므로 다른 클래스는 Enum으로 확장될 수 없습니다.
+- index, hashCode, 동등 연산자 ==은 재정의될 수 없습니다.
+- values라고 명명된 멤버는 열거형에서 선언될 수 없습니다. 자동으로 생성된 정적 values getter와 충돌할 수 있기 때문입니다.
+- 열거형의 모든 인스턴스는 반드시 선언 초기에 선언되어야합니다. 그리고 최소한 하나의 인스턴스가 선언되어야 합니다.
+
+향상된 열거형의 인스턴스 메서드는 현저 열거형 값을 참조하기 위해 this를 사용할 수 있습니다.
+
+아래에 여러 인스턴스, 인스턴수 변수, getter, 구현된 인터페이스가 포함된 향상된 열거형을 선언한 예시가 있습니다.
+
+```dart
+enum Vehicle implements Comparable<Vehicle> {
+  car(tires: 4, passengers: 5, carbonPerKilometer: 400),
+  bus(tires: 6, passengers: 50, carbonPerKilometer: 800),
+  bicycle(tires: 2, passengers: 1, carbonPerKilometer: 0);
+
+  const Vehicle({
+    required this.tires,
+    required this.passengers,
+    required this.carbonPerKilometer,
+  });
+
+  final int tires;
+  final int passengers;
+  final int carbonPerKilometer;
+
+  int get carbonFootprint => (carbonPerKilometer / passengers).round();
+
+  bool get isTwoWheeled => this == Vehicle.bicycle;
+
+  @override
+  int compareTo(Vehicle other) => carbonFootprint - other.carbonFootprint;
+}
+```
+
+```
+버전 노트
+
+향상된 열거형은 최소한 2.17 이상의 언어 버전을 요구합니다.
+```
+
+## 열거형 사용 Using enums
+
+다른 정적 변수와 같이 열거된 값에 접근하세요:
+
+```dart
+final favoriteColor = Color.blue;
+
+if (favoriteColor == Color.blue) {
+  print('Your favorite color is blue!');
+}
+```
+
+열거형의 각 값에는 열거형 선언 내부에서 값의 0부터 시작하는 위치를 반환하는 index getter가 있습니다. 예를 들어 첫 번째 값의 인덱스는 0이고 두 번째 값의 인덱스는 1입니다.
+
+```dart
+assert(Color.red.index == 0);
+assert(Color.green.index == 1);
+assert(Color.blue.index == 2);
+```
+
+모든 열거된 값의 목록을 얻으려면 enum의 values 상수를 사용하세요.
+
+```dart
+List<Color> colors = Color.values;
+assert(colors[2] == Color.blue);
+```
+
+switch 문 안에서 열거형을 사용할 수 있습니다. 모든 열거형의 값을 다루지 않으면 경고를 받습니다.
+
+```dart
+var aColor = Color.blue;
+
+switch (aColor) {
+  case Color.red:
+    print('Red as roses!');
+  case Color.green:
+    print('Green as grass!');
+  default: // 이 부분이 없으면, 경고를 보게 됩니다.
+    print(aColor); // 'Color.blue'
+}
+```
+
+Color.blue에서 'blue'와 같이 열거된 값의 이름에 접근해야한다면 .name 속성을 사용하세요.
+
+```dart
+print(Color.blue.name); // 'blue'
+```
+
+일반 객체에서와 마찬가지로 열거형 값의 멤버에 접근할 수 있습니다.
+
+```dart
+print(Vehicle.car.carbonFootprint);
+```
+
+# 확장 메서드 Extension methods
+
+확장 메서드는 기존 라이브러리에 기능을 추가합니다. 확장 메서드를 알지 못한 채 사용할 수도 있습니다. 예를 들어, IDE에서 코드 완성을 사용하면 일반 메서드와 함께 확장 메서드를 제안합니다.
+
+비디오를 시청하는 것이 학습에 도움이 된다면 확장 방법 개요를 확인해 보세요.
+
+## 개요 Overview
+
+다른 사람의 API를 사용하거나 널리 사용되는 라이브러리를 구현할 때 API를 변경하는 것은 종종 비실용적이거나 불가능합니다. 하지만 여전히 일부 기능을 추가하고 싶을 수 있습니다.
+
+예를 들어, 문자열을 정수로 파싱하는 다음 코드를 생각해 보세요.
+
+```dart
+int.parse('42')
+```
+
+대신에 해당 기능을 String에 두는 것이 좋을 것입니다. 즉, 도구를 사용하여 더 짧고 쉽게 사용할 수 있습니다.
+
+```dart
+'42'.parseInt()
+```
+
+해당 코드를 활성화하려면 String 클래스의 확장이 포함된 라이브러리를 가져올 수 있습니다.
+
+```dart
+import 'string_apis.dart';
+// ···
+print('42'.parseInt()); // 확장 메서드 사용.
+```
+
+확장은 메서드뿐만 아니라 getter, setter, 연산자와 같은 다른 멤버도 정의할 수 있습니다. 또한 확장은 이름을 가질 수 있으며, 이는 API 충돌이 발생하는 경우 도움이 될 수 있습니다. 다음은 문자열에 대해 작동하는 확장(NumberParsing이라는)을 사용하여 확장 메서드 parseInt()를 구현하는 방법입니다.
+
+```dart
+extension NumberParsing on String {
+  int parseInt() {
+    return int.parse(this);
+  }
+  // ···
+}
+```
+
+다음 섹션에서는 확장 메서드를 사용하는 방법을 설명합니다. 그 다음에는 확장 메서드 구현 에 대한 섹션이 있습니다.
+
+## 확장 메서드 사용 Using extension methods
+
+모든 Dart 코드와 마찬가지로 확장 메서드도 라이브러리에 있습니다. 확장 메서드를 사용하는 방법을 이미 살펴보았습니다. 확장 메서드가 포함된 라이브러리를 가져와서 일반 메서드처럼 사용하면 됩니다.
+
+```dart
+// String에 대한 확장을 포함하는 라이브러리를 가져오세요. Import a library that contains an extension on String.
+import 'string_apis.dart';
+// ···
+print('42'.padLeft(5)); // String 메서드 사용.
+print('42'.parseInt()); // 확장 메서드 사용.
+```
+
+이것이 확장 메서드를 사용하기 위해 일반적으로 알아야 할 전부입니다. 코드를 작성할 때 확장 메서드가 정적 타입(dynamic과 반대로)에 의존하는 방식과 API 충돌을 해결하는 방법을 알아야 할 수도 있습니다.
+
+## 정적 타입과 dynamic Static types and dynamic
+
+dynamic 타입의 변수에 확장 메서드를 호출할 수 없습니다. 예를 들어, 다음 코드는 런타임 예외를 발생시킵니다.
+
+```dart
+dynamic d = '2';
+print(d.parseInt()); // Runtime exception: NoSuchMethodError
+```
+
+확장 메서드는 Dart의 타입 추론과 함께 작동합니다 . 다음 코드는 변수 v가 String 타입을 갖는 것으로 추론되기 때문에 괜찮습니다.
+
+```dart
+var v = '2';
+print(v.parseInt()); // Output: 2
+```
+
+dynamic이 작동하지 않는 이유는 확장 메서드가 수신자의 정적 타입에 대해 해결되기 때문입니다. 확장 메서드는 정적으로 해결되므로 정적 함수를 호출하는 것만큼 빠릅니다.
+
+정적 타입 및 dynamic에 대한 자세한 내용은 Dart 타입 시스템을 참조하세요.
+
+## API 충돌 API conflicts
+
+확장 멤버가 인터페이스나 다른 확장 멤버와 충돌하는 경우, 몇 가지 옵션이 있습니다.
+
+한 가지 옵션은 충돌하는 확장을 가져오는 방법을 변경하여 show와 hide를 사용해 노출된 API를 제한하는 것입니다.
+
+```dart
+// String의 확장 메서드인 parseInt() 정의합니다.
+import 'string_apis.dart';
+
+// 또한 parseInt()를 정의하지만 NumberParsing2를 숨기면
+// 해당 확장 메서드가 숨겨집니다.
+import 'string_apis_2.dart' hide NumberParsing2;
+
+// ···
+// 'string_apis.dart'에 정의된 parseInt()를 사용합니다.
+print('42'.parseInt());
+```
+
+또 다른 옵션은 확장을 명시적으로 적용하는 것인데, 그러면 확장이 래퍼 클래스인 것처럼 보이는 코드가 생성됩니다.
+
+```dart
+// 두 라이브러리 모두 parsInt()를 포함하는 String에 대한 확장을 정의하며
+// 확장은 서로 다른 이름을 갖습니다.
+
+import 'string_apis.dart'; // NumberParsing 확장을 포함합니다.
+import 'string_apis_2.dart'; // NumberParsing2 확장을 포함합니다.
+
+// ···
+// print('42'.parseInt()); // 작동하지 않습니다.
+print(NumberParsing('42').parseInt());
+print(NumberParsing2('42').parseInt());
+```
+
+두 확장의 이름이 동일한 경우 접두사를 사용하여 가져와야 할 수도 있습니다.
+
+```dart
+// 두 라이브러리 모두 확장 메서드인 parseInt()를 포함하는 NumberParsing이라는 확장을 정의합니다.
+// 하나의 NumberParsing 확장('string_apis_3.dart'에 있는)도 parseNum()을 정의합니다.
+import 'string_apis.dart';
+import 'string_apis_3.dart' as rad;
+
+// ···
+// print('42'.parseInt()); // 작동하지 않습니다.
+
+// string_apis.dart의 ParseNumbers 확장을 사용하세요.
+print(NumberParsing('42').parseInt());
+
+// string_apis_3.dart의 ParseNumbers 확장을 사용하세요.
+print(rad.NumberParsing('42').parseInt());
+
+// string_apis_3.dart에만 parseNum()이 있습니다..
+print('42'.parseNum());
+```
+
+예에서 보듯이 접두사를 사용하여 가져오더라도 확장 메서드를 암묵적으로 호출할 수 있습니다. 접두사를 사용해야 하는 유일한 경우는 확장을 명시적으로 호출할 때 이름 충돌을 피하기 위한 것입니다.
+
+## 확장 메서드 구현 Implementing extension methods
+
+다음 문법을 사용하여 확장 메서드를 만드세요.
+
+```dart
+extension <extension name>? on <type> { // <extension-name>은 선택접입니다.
+  (<member definition>)* // 하나 이상의 <member definition>를 제공할 수 있습니다.
+}
+```
+
+예를 들어, String 클래스에 확장을 구현하는 방법은 다음과 같습니다.
+
+```dart
+extension NumberParsing on String {
+  int parseInt() {
+    return int.parse(this);
+  }
+
+  double parseDouble() {
+    return double.parse(this);
+  }
+}
+```
+
+확장의 멤버는 메서드, getter, setter 또는 연산자일 수 있습니다. 확장에는 정적 필드와 정적 헬퍼 메서드가 있을 수도 있습니다. 확장 선언 외부의 정적 멤버에 접근하려면 클래스 변수 및 메서드와 같은 선언 이름을 통해 호출합니다.
+
+## 이름이 없는 확장 Unnamed extensions
+
+확장자를 선언할 때 이름을 생략할 수 있습니다. 이름없는 확장은 선언된 라이브러리에서만 볼 수 있습니다. 이름이 없으므로 API 충돌을 해결하기 위해 명시적으로 적용할 수 없습니다.
+
+```dart
+extension on String {
+  bool get isBlank => trim().isEmpty;
+}
+```
+
+```
+노트
+
+확장 선언 내에서만 이름없는 확장의 정적 멤버를 호출할 수 있습니다.
+```
+
+## 제네릭 확장 구현 Implementing generic extensions
+
+확장에는 제네릭 타입 매개변수가 있을 수 있습니다. 예를 들어, 다음은 getter, 연산자 및 메서드를 사용하여 내장된 List<T> 타입을 확장하는 일부 코드입니다.
+
+```dart
+extension MyFancyList<T> on List<T> {
+  int get doubleLength => length * 2;
+  List<T> operator -() => reversed.toList();
+  List<List<T>> split(int at) => [sublist(0, at), sublist(at)];
+}
+```
+
+T 타입은 메서드가 호출되는 리스트의 정적 타입을 기반으로 바인딩됩니다.
+
+## 자원 Resources
+
+확장 메서드에 대한 자세한 내용은 다음을 참조하세요.
+
+- 기사: 다트 확장 메서드 기초
+- 기능 사양
+- 확장 메서드 샘플
+
+# 확장 타입 Extension types
+
+확장 타입은 기존 타입을 다른 정적 전용 인터페이스로 "래핑"하는 컴파일 타임 추상화입니다. 실제 래퍼 비용을 들이지 않고도 기존 타입의 인터페이스(모든 종류의 상호 운용성에 중요한)를 쉽게 수정할 수 있기 때문에 이는 정적 JS 상호 운용성의 주요 구성 요소입니다.
+
+확장 타입은 표현 타입 이라고 하는 기본 타입의 객체에 사용 가능한 작업(또는 인터페이스)집합에 규칙을 적용합니다. 확장 타입의 인터페이스를 정의할 때 표현 타입의 일부 멤버를 재사용하고, 다른 멤버를 생략하고, 다른 멤버를 대체하고, 새로운 기능을 추가하도록 선택할 수 있습니다.
+
+다음 예에서는 int 타입을 래핑하여 ID 번호에 적합한 작업만 허용하는 확장 타입을 만듭니다.
+
+```dart
+extension type IdNumber(int id) {
+  // int 타입의 < 연산자를 래핑:
+  operator <(IdNumber other) => id < other.id;
+  // + 연산자를 선언하지 마세요, 예를 들어,
+  // 더하기는 ID numbers에 의미가 없기 때문입니다.
+}
+
+void main() {
+  // 확장 타입의 규칙 없이,
+  // int는 안전하지 않은 작업에 ID numbers를 노출합니다:
+  int myUnsafeId = 42424242;
+  myUnsafeId = myUnsafeId + 10; // 작동하지만, ID에 허용되어서는 안됩니다.
+
+  var safeId = IdNumber(42424242);
+  safeId + 10; // 컴파일 타임 오류: + 연산자가 없습니다.
+  myUnsafeId = safeId; // 컴파일 타임 오류: 잘못된 타입. Compile-time error: Wrong type.
+  myUnsafeId = safeId as int; // 괜찮습니다: 표현 타입으로 런타임 캐스팅 OK: Run-time cast to representation type.
+  safeId < IdNumber(42424241); // 괜찮습니다: 래핑된 < 연산자를 사용합니다.
+}
+```
+
+```
+노트
+
+확장 타입은 래퍼 클래스 와 동일한 목적을 제공 하지만, 많은 객체를 래핑해야 할 때 
+비용이 많이 들 수 있는 추가 런타임 객체를 만들 필요가 없습니다. 
+확장 타입은 정적 전용이고 런타임에 컴파일되므로 본질적으로 비용이 없습니다.
+
+확장 메서드(또는 "확장"이라고도 함)는 확장 타입과 유사한 정적 추상화입니다. 
+그러나 확장 메서드는 기본 타입의 모든 인스턴스에 직접 기능을 추가합니다. 확장 타입은 다릅니다. 
+확장 타입의 인터페이스는 정적 타입이 해당 확장 타입인 표현식에만 적용됩니다. 
+기본적으로 기본 타입의 인터페이스와 다릅니다.
+```
+
+## 문법 Syntax
+
+## 선언 Declaration
+
+extension type선언과 이름을 사용하여 새 확장 타입을 정의하고, 그 뒤에 괄호로 표현 타입 선언을 추가합니다.
+
+```dart
+extension type E(int i) {
+  // 작업의 집합을 정의합니다.
+}
+```
+
+표현 타입 선언(int i)은 확장 타입 E의 기본 타입이 int이고 표현 객체에 대한 참조가 i임을 지정합니다. 선언은 또한 다음을 소개합니다:
+
+- 표현 타입을 반환 타입으로 사용하는 표현 객체에 대한 암시적 getter : int get i.
+
+- 암시적 생성자 : E(int i) : i = i.
+
+표현 객체는 확장 타입이 기본 타입의 객체에 접근할 수 있도록 합니다. 객체는 확장 타입 본문의 범위에 있으며, 이름을 getter로 사용하여 접근할 수 있습니다:
+
+- i(또는 생성자 내의 this.i)를 사용한 확장 타입 본문 내부에서.
+
+- e.i를 사용한 속성 추출이 있는 외부(e는 확장 타입을 정적 타입으로 가짐).
+
+확장 타입 선언은 클래스나 확장과 마찬가지로 타입 매개변수도 포함할 수 있습니다.
+
+```dart
+extension type E<T>(List<T> elements) {
+  // ...
+}
+```
+
+## 생성자 Constructor
+
+선택적으로 확장 타입의 본문에서 생성자를 선언할 수 있습니다. 표현 선언 자체는 암시적 생성자이므로 기본적으로 확장 타입에 대해 명명되지 않은 생성자를 대신합니다. 리디렉션되지 않는 추가 생성형 생성자는 초기화 리스트의 this.i나 형식 매개변수를 사용하여 표현 객체의 인스턴스 변수를 초기화해야 합니다.
+
+```dart
+extension type E(int i) {
+  E.n(this.i);
+  E.m(int j, String foo) : i = j + foo.length;
+}
+
+void main() {
+  E(4); // 암시적 이름없는 생성자.
+  E.n(3); // 이름있는 생성자.
+  E.m(5, "Hello!"); // 추가 매개변수가 있는 이름있는 생성자.
+}
+```
+
+또는 표현 선언 생성자의 이름을 지정할 수 있습니다. 이 경우 본문에 이름없는 생성자를 위한 공간이 있습니다.
+
+```dart
+extension type const E._(int it) {
+  E(): this._(42);
+  E.otherName(this.it);
+}
+
+void main2() {
+  E();
+  const E._(2);
+  E.otherName(3);
+}
+```
+
+클래스에 대해 동일한 private 생성자 문법 _을 사용하여 새 생성자를 정의하는 대신 생성자를 완전히 숨길 수도 있습니다. 예를 들어, 기본 타입이 int임에도 클라이언트를 String을 사용한 E로 구성하려는 경우:
+
+```dart
+extension type E._(int i) {
+  E.fromString(String foo) : i = int.parse(foo);
+}
+```
+
+생성형 생성자 또는 팩토리 생성자(하위 확장 타입의 생성자로 전달할 수도 있음) 전달을 선언할 수도 있습니다.
+
+## 멤버 Members
+
+클래스 멤버와 동일한 방식으로 인터페이스를 정의하려면 확장 타입의 본문에서 멤버를 선언하세요. 확장 타입 멤버는 메서드, getter, setter 또는 연산자일 수 있습니다(external이 아닌 인스턴스 변수 및 추상 멤버는 허용되지 않음):
+
+```dart
+extension type NumberE(int value) {
+  // 연산자:
+  NumberE operator +(NumberE other) =>
+      NumberE(value + other.value);
+  // getter:
+  NumberE get myNum => this;
+  // 메서드:
+  bool isValid() => !value.isNegative;
+}
+```
+
+표현 타입의 인터페이스 멤버는 기본적으로 확장 타입의 인터페이스 멤버가 아닙니다. 확장 타입에서 사용 가능한 표현 타입의 단일 멤버를 만들려면 NumberE의 + 연산자와 같이 확장 타입 정의에 이에 대한 선언을 작성해야 합니다. i getter 및 isValid 메서드와 같이 표현 타입과 관련되지 않은 새 멤버를 정의할 수도 있습니다.
+
+## 구현 Implements
+
+선택적으로 implements 절을 사용하여 다음을 수행할 수 있습니다.
+
+- 확장 타입에 하위 타입 관계를 도입하고
+
+- 표현 객체의 멤버를 확장 타입 인터페이스에 추가합니다.
+
+implements 절은 확장 메서드와 해당 on 타입 간의 관계와 같은 적용 가능성 관계를 소개합니다. 상위 타입에 적용 가능한 멤버는 하위 타입에 동일한 멤버 이름을 가진 선언이 없는 한 하위 타입에도 적용 가능합니다.
+
+확장 타입은 다음만 구현할 수 있습니다.
+
+- 표현 타입. 이렇게 하면 표현 타입의 모든 멤버를 확장 타입에서 암시적으로 사용할 수 있습니다.
+  ```dart
+  extension type NumberI(int i) 
+  implements int{
+  // 'NumberI'는 'int'의 모든 멤버를 호출할 수 있고,
+  // 추가로 여기에 어떤 것이든 선언할 수 있습니다.
+  }
+  ```
+
+- 표현 타입의 상위 타입. 이것은 상위 타입의 멤버를 사용 가능하게 하지만 표현 타입의 모든 멤버를 반드시 사용할 수 있는 것은 아닙니다.
+  ```dart
+  extension type Sequence<T>(List<T> _) implements Iterable<T> {
+    // 리스트 보다 나은 작업.
+  }
+
+  extension type Id(int _id) implements Object {
+    // 확장 타입을 널이 아니게 합니다.
+    static Id? tryParse(String source) => int.tryParse(source) as Id?;
+  }
+  ```
+
+- 동일한 표현 타입에 유효한 또 다른 확장 타입입니다. 이를 통해 여러 확장 타입에 작업을 재사용할 수 있습니다(다중 상속과 유사).
+  ```dart
+  extension type const Opt<T>._(({T value})? _) { 
+  const factory Opt(T value) = Val<T>;
+  const factory Opt.none() = Non<T>;
+  }
+  
+  extension type const Val<T>._(({T value}) _) implements Opt<T> { 
+    const Val(T value) : this._((value: value));
+    T get value => _.value;
+  }
+  
+  extension type const Non<T>._(Null _) implements Opt<Never> {
+    const Non() : this._(null);
+  }
+  ```
+
+다양한 시나리오에서 implents의 효과에 대해 자세히 알아보려면 사용법 섹션을 읽어보세요.
+
+## @redeclare
+
+상위 타입의 멤버와 이름을 공유하는 확장 타입 멤버를 선언하는 것은 클래스 간의 재정의 관계가 아니라 재선언 입니다. 확장 타입 멤버 선언은 동일한 이름을 가진 상위 타입 멤버를 완전히 대체합니다. 동일한 기능에 대해 대체 구현을 제공하는 것은 불가능합니다.
+
+@redeclare 주석을 사용하여 컴파일러에게 상위 타입의 멤버와 동일한 이름을 사용하도록 의도적으로 선택했음을 알릴 수 있습니다. 그러면 분석기가 실제로 그렇지 않은 경우, 예를 들어 이름 중 하나가 잘못 입력된 경우 경고합니다.
+
+```dart
+extension type MyString(String _) implements String {
+  // 'String.operator[]'를 대체합니다.
+  @redeclare
+  int operator [](int index) => codeUnitAt(index);
+}
+```
+
+상위 인터페이스 멤버를 숨기고 @redeclare로 주석을 달지 않는 확장 타입 메서드를 선언하는 경우, 경고를 표시하도록 린트 annotate_redeclares를 활성화할 수도 있습니다.
+
+## 사용법 Usage
+
+확장 타입을 사용하려면 클래스에서와 동일한 방식으로 생성자를 호출하여 인스턴스를 만듭니다.
+
+```dart
+extension type NumberE(int value) {
+  NumberE operator +(NumberE other) =>
+      NumberE(value + other.value);
+
+  NumberE get next => NumberE(value + 1);
+  bool isValid() => !value.isNegative;
+}
+
+void testE() { 
+  var num = NumberE(1);
+}
+```
+
+그런 다음 클래스 객체와 마찬가지로 객체의 멤버를 호출할 수 있습니다.
+
+확장 타입에는 동일하게 유효하지만 실질적으로 다른 두 가지 핵심 사용 사례가 있습니다.
+
+1. 기존 타입에 확장된 인터페이스를 제공합니다.
+2. 기존 타입에 다른 인터페이스를 제공합니다.
+
+```
+노트
+
+어떤 경우에도 확장 타입의 표현 타입은 결코 하위 타입이 아니므로, 
+확장 타입이 필요한 곳에서 표현 타입을 서로 바꿔 사용할 수 없습니다.
+```
+
+1. 기존 타입에 확장된 인터페이스 제공 Provide an extended interface to an existing type
+
+확장 타입이 해당 표현 타입을 구현할 때 확장 타입이 기본 타입을 "볼" 수 있도록 허용하므로 이를 "투명"하다고 간주할 수 있습니다.
+
+투명한 확장 타입은 표현 타입(재선언되지 않은)의 모든 멤버와 정의된 보조 멤버를 호출할 수 있습니다. 그러면 기존 타입에 대한 새로운 확장 인터페이스가 생성됩니다. 새 인터페이스는 정적 타입이 확장 타입인 표현식에 사용할 수 있습니다.
+
+이는 다음과 같이 (비투명 확장 타입과 달리) 표현 타입의 멤버를 호출할 수 있음을 의미합니다.
+
+```dart
+extension type NumberT(int value) 
+  implements int {
+  // 'int'의 멤버를 명시적으로 선언하지 않습니다.
+  NumberT get i => this;
+}
+
+void main () {
+  // 전부 괜찮습니다: 투명성은 확장 타입에 'int' 멤버를 호출할 수 있게 합니다:
+  var v1 = NumberT(1); // v1 타입: NumberT
+  int v2 = NumberT(2); // v2 타입: int
+  var v3 = v1.i - v1;  // v3 타입: int
+  var v4 = v2 + v1; // v4 타입: int
+  var v5 = 2 + v1; // v5 타입: int
+  // 오류: 확장 타입 인터페이스는 표현 타입에 사용할 수 없습니다
+  v2.i;
+}
+```
+
+또한 상위 타입에서 주어진 멤버 이름을 재선언하여 새 멤버를 추가하고 다른 멤버를 조정하는 "대부분 투명한" 확장 타입을 가질 수도 있습니다. 예를 들어, 이를 통해 메서드의 일부 매개변수에 대해 더 엄격한 타입을 사용하거나 다른 기본값을 사용할 수 있습니다.
+
+또 다른 투명한 확장 타입 접근 방식은 표현 타입의 상위 타입인 타입을 구현하는 것입니다. 예를 들어 표현 타입이 private이지만 해당 상위 타입이 클라이언트에 중요한 인터페이스 부분을 정의하는 경우입니다.
+
+2. 기존 타입과 다른 인터페이스 제공 Provide a different interface to an existing type
+
+투명하지 않은(해당 표현 유형을 구현하지 않는) 확장 타입은 해당 표현 타입과 구별되는 완전히 새로운 타입으로 정적으로 처리됩니다. 표현 타입에 할당할 수 없으며 표현 타입의 멤버를 노출하지 않습니다.
+
+예를 들어 사용법 아래에 선언한 NumberE 확장 타입을 사용합니다.
+
+```dart
+void testE() { 
+  var num1 = NumberE(1);
+  int num2 = NumberE(2); // 오류: 'NumberE'를 'int'에 할당할 수 없습니다.
+  
+  num1.isValid(); // 괜찮습니다: 확장 멤버 호출.
+  num1.isNegative(); // 오류: 'NumberE'는'int' 멤버 'isNegative'를 정의하지 않습니다.
+  
+  var sum1 = num1 + num1; // 괜찮습니다: 'NumberE'는 '+'를 정의합니다.
+  var diff1 = num1 - num1; // 오류: 'NumberE'는'int' 멤버 '-'를 정의하지 않습니다.
+  var diff2 = num1.value - 2; // 괜찮습니다: 참조로 표현 객체에 접근할 수 있습니다.
+  var sum2 = num1 + 2; // 오류: 'NumberE' 매개변수 타입에 'int'를 할당할 수 없습니다. 
+  
+  List<NumberE> numbers = [
+    NumberE(1), 
+    num1.next, // 괜찮습니다: 'next' getter는 'NumberE' 타입을 반환합니다.
+    1, // 오류: 'NumberE' 리스트 타입에 'int' 요소를 할당할 수 없습니다.
+  ];
+}
+```
+
+이 방법으로 확장 타입을 사용하여 기존 타입의 인터페이스를 바꿀 수 있습니다. 이를 통해 새로운 타입의 제약 조건(소개의 IdNumber 예제와 같은)에 적합한 인터페이스를 모델링하는 동시에 int와 같이 간단한 미리 정의된 타입의 성능과 편리함의 이점을 누릴 수 있습니다.
+
+## 타입 고려사항 Type considerations
+
+확장 타입은 컴파일 타임 래핑 구문입니다. 런타임에는 확장 타입에 대한 추적이 전혀 없습니다. 모든 타입 쿼리 또는 유사한 런타임 작업은 표현 타입에 대해 작동합니다.
+
+이는 확장 타입을 안전하지 않은 추상화로 만듭니다. 왜냐하면 런타임에 항상 표현 타입을 찾아 기본 객체에 접근할 수 있기 때문입니다.
+
+dynamic 타입 테스트(e is T), 캐스팅(e as T) 및 기타 런타임 타입 쿼리(예: switch(e) ... 또는 if(e case ...))는 모두 기본 표현 객체로 평가되고, 해당 객체의 런타임 타입에 대해 타입 검사를 합니다. 이는 e의 정적 타입이 확장 타입인 경우와 확장 타입(case MyExtensionType(): ...)에 대해 검사할 때에도 마찬가지입니다.
+
+```dart
+void main() {
+  var n = NumberE(1);
+
+  // 'n'의 런타임 유형은 표현 타입 'int'입니다.
+  if (n is int) print(n.value); // 1 출력.
+
+  // 런타임에 'n'에 대해 'int' 메서드를 사용할 수 있습니다.
+  if (n case int x) print(x.toRadixString(10)); // 1 출력.
+  switch (n) {
+    case int(:var isEven): print("$n (${isEven ? "even" : "odd"})"); // 1(odd) 출력.
+  }
+}
+```
+
+마찬가지로 일치하는 값의 정적 타입은 아래 예시에서 확장 타입의 타입입니다.
+
+```dart
+void main() {
+  int i = 2;
+  if (i is NumberE) print("It is"); // 'It is' 출력.
+  if (i case NumberE v) print("value: ${v.value}"); // 'value: 2' 출력.
+  switch (i) {
+    case NumberE(:var value): print("value: $value"); // 'value: 2' 출력.
+  }
+}
+```
+
+확장 타입을 사용할 때 이러한 퀄리티를 인식하는 것이 중요합니다. 확장 타입이 컴파일 타임에 존재하고 중요하지만 컴파일 중에 지워진다는 점을 항상 염두에 두십시오.
+
+예를 들어 정적 타입이 확장 타입 E이고 E의 표현 타입이 R인 표현식 e를 생각해 보세요. 그러면 e 값의 런타임 타입은 R의 하위 타입입니다. 타입 자체도 지워집니다. List<E>는 런타임에 List<R>과 완전히 동일합니다.
+
+즉, 실제 래퍼 클래스는 래핑된 객체를 캡슐화할 수 있는 반면 확장 타입은 래핑된 객체에 대한 컴파일 타임 뷰일 뿐입니다. 실제 래퍼가 더 안전하지만 확장 타입이 래퍼 객체를 피할 수 있는 옵션을 제공하므로 일부 시나리오에서는 성능이 크게 향상될 수 있다는 트레이드 오프가 있습니다.
+
+## 호출 가능한 객체 Callable objects
+
+Dart 클래스의 인스턴스가 함수처럼 호출되도록 하려면 call() 메서드를 구현하세요.
+
+call() 메서드는 call() 메서드를 정의하는 모든 클래스의 인스턴스가 함수를 모방할 수 있습니다. 이 메서드는 매개변수, 반환 타입 등 일반 함수와 같은 기능을 지원합니다.
+
+다음 예시에서 WannabeFunction 클래스는 세 개의 문자열을 받아서 연결하고 각각을 공백으로 구분한 후 느낌표를 추가하는 call() 함수를 정의합니다. 실행을 클릭하여 코드를 실행합니다.
+
+```dart
+class WannabeFunction {
+  String call(String a, String b, String c) => '$a $b $c!';
+}
+
+var wf = WannabeFunction();
+var out = wf('Hi', 'there,', 'gang');
+
+void main() => print(out);
+```
