@@ -1,0 +1,273 @@
+# 클래스 수정자 Class Modifiers
+
+```
+버전 노트
+
+abstract 외에도 클래스 수정자는 최소 3.0 버전 이상의 언어 버전이 필요합니다.
+```
+
+클래스 수정자는 클래스나 믹스인이 사용될 수 있는 방법을 제어합니다. 이는 해당 클래스나 믹스인이 정의된 라이브러리 내부 및 외부 모두에서 적용됩니다.
+
+수정자 키워드는 클래스나 믹스인 선언 전에 옵니다. 예를 들어, abstract class는 추상 클래스를 정의합니다. 클래스 선언 전에 올 수 있는 모든 수정자들은 다음과 같습니다:
+
+- abstract
+- base
+- final
+- interface
+- sealed
+- mixin
+
+base 수정자만이 믹스인 선언 전에 올 수 있습니다. 수정자는 enum, typedef, extension, 또는 extension type과 같은 다른 선언에는 적용되지 않습니다.
+
+클래스 수정자를 사용할지 여부를 결정할 때, 클래스의 의도된 사용과 클래스가 의존해야 하는 동작을 고려하십시오.
+
+```
+노트
+
+라이브러리를 유지하는 경우, 라이브러리에 대한 이러한 변경 사항을 어떻게 탐색할지에 대한 
+가이드를 위해 클래스 수정자에 대한 API 유지 관리자를 위한 페이지를 읽어보세요.
+```
+
+## 수정자 없이 사용 No modifier
+
+어떤 라이브러리에서도 생성이나 하위 타입에 대해 제한없이 허용하려면 수정자 없이 클래스나 믹스인 선언을 사용하세요. 기본적으로 다음을 수행할 수 있습니다:
+
+- 클래스의 새 인스턴스를 생성할 수 있습니다.
+
+- 클래스를 확장하여 새로운 하위 타입을 만들 수 있습니다.
+
+- 클래스나 믹스인의 인터페이스를 구현할 수 있습니다.
+
+- 믹스인이나 믹스인 클래스를 믹스인할 수 있습니다.
+
+## abstract
+
+전체 인터페이스에 대한 완전하고 구체적인 구현이 필요하지 않은 클래스를 정의하려면 abstract 수정자를 사용하십시오.
+
+추상 클래스는 어느 라이브러리에서도 생성할 수 없습니다. 추상 클래스는 종종 추상 메서드를 가지고 있습니다.
+
+```dart
+// a.dart
+abstract class Vehicle {
+  void moveForward(int meters);
+}
+```
+
+```dart
+// b.dart
+import 'a.dart';
+
+// 오류: 생성할 수 없습니다.
+Vehicle myVehicle = Vehicle();
+
+// 확장 가능합니다.
+class Car extends Vehicle {
+  int passengers = 4;
+
+  @override
+  void moveForward(int meters) {
+    // ...
+  }
+}
+
+// 구현 가능합니다.
+class MockVehicle implements Vehicle {
+  @override
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+
+추상 클래스를 인스턴스화할 수 있는 것처럼 보이게 하려면, 팩토리 생성자를 정의하십시오.
+
+## base
+
+클래스나 믹스인 구현의 상속을 강제하려면 base 수정자를 사용하십시오. base 클래스는 외부 라이브러리에서의 구현을 금지합니다. 이는 다음을 보장합니다:
+
+- 하위 타입 인스턴스가 생성될 때마다 base 클래스 생성자가 호출됩니다.
+
+- 모든 구현된 private 멤버가 하위 타입에 존재합니다.
+
+- base 클래스의 새롭게 구현된 멤버는 하위 타입을 손상시키지 않습니다. 모든 하위 타입은 새 멤버를 상속받기 때문입니다.
+  - 하위 타입이 같은 이름과 호환되지 않는 시그니처를 가진 멤버를 선언하지 않는 한 이는 사실입니다.
+
+base 클래스를 구현하거나 확장하는 모든 클래스는 base, final 또는 sealed로 표시해야 합니다. 이를 통해 외부 라이브러리가 base 클래스 보장을 위반하는 것을 방지합니다.
+
+```dart
+// a.dart
+base class Vehicle {
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+
+```dart
+// b.dart
+import 'a.dart';
+
+// 생성 가능합니다.
+Vehicle myVehicle = Vehicle();
+
+// 확장 가능합니다.
+base class Car extends Vehicle {
+  int passengers = 4;
+  // ...
+}
+
+// 오류: 구현할 수 없습니다.
+base class MockVehicle implements Vehicle {
+  @override
+  void moveForward() {
+    // ...
+  }
+}
+```
+
+## interface
+
+인터페이스를 정의하려면 interface 수정자를 사용하십시오. 인터페이스를 정의하는 라이브러리 외부의 라이브러리는 인터페이스를 구현할 수 있지만, 확장할 수는 없습니다. 이는 다음을 보장합니다:
+
+- 클래스의 인스턴스 메서드가 this로 다른 인스턴스 메서드를 호출할 때, 항상 동일한 라이브러리 메서드의 알려진 구현을 호출합니다.
+
+- 다른 라이브러리가 인터페이스 클래스의 자체 메서드가 나중에 예기치 않게 호출할 수 있는 메서드를 재정의할 수 없습니다. 이를 통해 깨지기 쉬운 기본 클래스 문제를 줄일 수 있습니다.
+
+```dart
+// a.dart
+interface class Vehicle {
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+
+```dart
+// b.dart
+import 'a.dart';
+
+// 생성 가능합니다.
+Vehicle myVehicle = Vehicle();
+
+// 오류: 상속할 수 없습니다.
+class Car extends Vehicle {
+  int passengers = 4;
+  // ...
+}
+
+// 구현 가능합니다.
+class MockVehicle implements Vehicle {
+  @override
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+
+## abstract interface
+
+interface 수정자의 가장 일반적인 사용은 순수 인터페이스를 정의하는 것입니다. interface와 abstract 수정자를 결합하여 abstract interface class를 정의하십시오.
+
+인터페이스 클래스와 마찬가지로, 다른 라이브러리에서 순수 인터페이스 구현할 수 있지만, 상속할 수는 없습니다. 추상 클래스와 마찬가지로, 순수 인터페이스는 추상 멤버를 가질 수 있습니다.
+
+## final
+
+타입 계층을 닫으려면 final 수정자를 사용하십시오. 이는 현재 라이브러리 외부에서 클래스의 하위 타입화를 금지합니다. 상속과 구현을 모두 금지하여 하위 타입화를 완전히 금지합니다. 이는 다음을 보장합니다:
+
+- API에 점진적인 변경 사항을 안전하게 추가할 수 있습니다.
+
+- 외부 서브클래스에서 덮어쓰지 않았다는 것을 알고 인스턴스 메서드를 호출할 수 있습니다.
+
+final 클래스는 동일한 라이브러리 내에서 확장되거나 구현될 수 있습니다. final 수정자는 base의 효과를 포함하며, 따라서 모든 하위 클래스는 base, final 또는 sealed로 표시해야 합니다.
+
+```dart
+// a.dart
+final class Vehicle {
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+```dart
+// b.dart
+import 'a.dart';
+
+// 생성 가능합니다.
+Vehicle myVehicle = Vehicle();
+
+// 오류: 상속할 수 없습니다.
+class Car extends Vehicle {
+  int passengers = 4;
+  // ...
+}
+
+class MockVehicle implements Vehicle {
+  // 오류: 구현할 수 없습니다.
+  @override
+  void moveForward(int meters) {
+    // ...
+  }
+}
+```
+
+## sealed
+
+알려진 열거형 하위 타입 세트를 만들려면 sealed 수정자를 사용하십시오. 이를 통해 정적으로 철저히 보장되는 하위 타입에 대한 switch를 만들 수 있습니다.
+
+sealed 수정자는 자체 라이브러리 외부에서 확장되거나 구현되는 클래스를 방지합니다. sealed 클래스는 암묵적으로 abstract입니다.
+
+- sealed 클래스는 자체적으로 생성할 수 없습니다.
+
+- 팩토리 생성자를 가질 수 있습니다.
+
+- 하위 클래스에서 사용할 생성자를 정의할 수 있습니다.
+
+그러나 sealed 클래스의 하위 클래스는 암묵적으로 추상적이지는 않습니다.
+
+컴파일러는 가능한 모든 직접적 하위 타입을 인식하고 있습니다. 동일한 라이브러리 내에서만 존재할 수 있기 때문입니다. 이는 switch가 모든 가능한 하위 타입을 철저히 처리하지 않는 경우 경고를 표시할 수 있게 합니다:
+
+```dart
+sealed class Vehicle {}
+
+class Car extends Vehicle {}
+
+class Truck implements Vehicle {}
+
+class Bicycle extends Vehicle {}
+
+// 오류: 인스턴스화할 수 없습니다.
+Vehicle myVehicle = Vehicle();
+
+// 하위 클래스는 인스턴스화할 수 있습니다.
+Vehicle myCar = Car();
+
+String getVehicleSound(Vehicle vehicle) {
+  // 오류: switch에서 Bicycle 하위 타입 또는 기본 case가 누락되었습니다.
+  return switch (vehicle) {
+    Car() => 'vroom',
+    Truck() => 'VROOOOMM',
+  };
+}
+```
+
+철저한 switch를 원하지 않거나, 나중에 하위 타입을 추가하면서 API를 손상시키지 않으려면 final 수정자를 사용하십시오. 더 깊은 비교를 위해, sealed 대 final을 읽어보세요.
+
+## 수정자 결합 Combining modifiers
+
+계층적 제한을 위해 일부 수정자를 결합할 수 있습니다. 클래스 선언은 순서대로 다음과 같이 나타날 수 있습니다:
+
+1. (선택적) abstract: 클래스가 추상 멤버를 가질 수 있는지 여부를 설명하고 인스턴스화를 방지합니다.
+
+2. (선택적) base, interface, final, sealed 중 하나: 다른 라이브러리에서 클래스의 하위 타입화를 제한하는 방식을 설명합니다.
+
+3. (선택적) mixin: 선언을 믹스인할 수 있는지 여부를 설명합니다.
+
+4. class 키워드 자체.
+
+일부 수정자는 서로 모순되거나 중복되거나 상호 배타적이기 때문에 결합할 수 없습니다:
+
+- abstract와 sealed. sealed 클래스는 암묵적으로 abstract입니다.
+
+- interface, final 또는 sealed와 mixin: 이러한 접근 수정자는 믹스인을 방지합니다.
+
+클래스 수정자가 어떻게 결합될 수 있는지에 대한 추가 가이드를 위해, 클래스 수정자 참고 자료를 확인하십시오.
