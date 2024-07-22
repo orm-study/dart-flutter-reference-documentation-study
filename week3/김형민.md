@@ -1,0 +1,1138 @@
+# 에러 핸들링 Error handling
+
+## 예외 Exceptions
+
+Dart는 예외를 발생시키고 잡아냅니다. 예외는 예기치않은 일이 발생했을 때 나타내는 오류입니다. 만약 예외가 잡히지 않으면, 예외를 발생시킨 아이솔레이트가 지연되고 일시적으로 아이솔레이트와 프로그램은 종료됩니다.
+
+Java와 달리 Dart의 모든 예외는 확인되지않은 예외입니다. 메서드는 어떤 예외를 발생시킬지 선언하지 않으며 예외를 잡아낼 필요가 없습니다.
+
+Dart는 Exception과 Error 타입뿐만 아니라 다른 수많은 미리 선언된 하위타입을 제공합니다. 물론 자신만의 예외를 만들 수도 있습니다. 그러나 Dart 프로그램은 Exception과 Error 객체뿐만 아니라 null이 아닌 어떤 객체도 예외로 발생시킬 수 있습니다.
+
+## 던지기 Throw
+
+다음은 예외를 던지거나 발생시키는 예시입니다:
+
+```dart
+throw FormatException('Expected at least 1 section');
+```
+
+임의의 객체를 던질 수도 있습니다:
+
+```dart
+throw 'Out of llamas!';
+```
+
+```
+노트
+
+프로덕션 퀄리티의 코드는 대개 Error나 Exception을 구현한 타입을 던집니다.
+```
+
+예외를 던지는 것은 표현식이기 때문에, => 문 뿐만아니라 표현식을 허용하는 어디에서든 예외를 던질 수 있습니다.
+
+```dart
+void distanceTo(Point other) => throw UnimplementedError();
+```
+
+## 잡기 Catch
+
+예외를 잡거나 포착하면 예외 전파가 중지됩니다(예외를 다시 던지지 않는 한). 예외를 잡는 것은 이를 처리할 기회가 주어집니다.
+
+```dart
+try {
+  breedMoreLlamas();
+} on OutOfLlamasException {
+  buyMoreLlamas();
+}
+```
+
+두 가지 이상의 예외 타입을 발생시킬 수 있는 코드를 처리하려면 여러개의 catch 절을 지정할 수 있습니다. 던져진 객체의 타입과 일치하는 첫 번째 catch 절이 예외를 처리합니다. catch 절이 타입을 지정하지 않으면 해당 절은 던져진 객체의 모든 유형을 처리할 수 있습니다.
+
+```dart
+try {
+  breedMoreLlamas();
+} on OutOfLlamasException {
+  // 특정 예외
+  buyMoreLlamas();
+} on Exception catch (e) {
+  // 그 밖에 예외인 것
+  print('Unknown exception: $e');
+} catch (e) {
+  // 지정된 타입 없음, 모두 처리
+  print('Something really unknown: $e');
+}
+```
+
+위의 코드에서 볼 수 있듯이 on이나 cath, 또는 둘 다 사용할 수 있습니다. 예외 타입을 지정해야하는 경우 on을 사용합니다. 예외 처리에 Exception 객체가 필요한 경우 catch를 사용하세요.
+
+catch()에 하나 또는 두 개의 매개변수를 지정할 수 있습니다. 첫 번째는 발생한 예외이고 두 번째는 스택 추적(StackTrace 객체)입니다.
+
+```dart
+try {
+  // ···
+} on Exception catch (e) {
+  print('Exception details:\n $e');
+} catch (e, s) {
+  print('Exception details:\n $e');
+  print('Stack trace:\n $s');
+}
+```
+
+예외의 전파를 허용하면서 부분적으로 예외를 처리하려면 rethrow 키워드를 사용하세요.
+
+```dart
+void misbehave() {
+  try {
+    dynamic foo = true;
+    print(foo++); // 런타임 오류
+  } catch (e) {
+    print('misbehave() partially handled ${e.runtimeType}.');
+    rethrow; // 호출자가 예외를 볼 수 있도록 허용
+  }
+}
+
+void main() {
+  try {
+    misbehave();
+  } catch (e) {
+    print('main() finished handling ${e.runtimeType}.');
+  }
+}
+```
+
+## Finally
+
+예외 발생 여부에 관계없이 일부 코드가 실행되도록 하려면 finally 절을 사용하세요. 예외와 일치하는 catch 절이 없으면 finally 절이 실행된 후 예외가 전파됩니다.
+
+```dart
+try {
+  breedMoreLlamas();
+} finally {
+  // 예외가 발생해도 항상 정리.
+  cleanLlamaStalls();
+}
+```
+
+finally 절은 일치하는 catch절 이후에 실행됩니다.
+
+```dart
+try {
+  breedMoreLlamas();
+} catch (e) {
+  print('Error: $e'); // 예외 먼저 처리.
+} finally {
+  cleanLlamaStalls(); // 그런 다음 정리.
+}
+```
+
+## Assert
+
+개발 중에는 assert 문(assert(\<condition\>, \<optionalMessage\>))을 사용하십시오. 부울 조건이 거짓인 경우 정상적인 실행을 방해합니다.
+
+```dart
+// 변수에 null이 아닌 값이 있는지 확인.
+assert(text != null);
+
+// 값이 100보다 작은지 확인.
+assert(number < 100);
+
+// https URL인지 확인.
+assert(urlString.startsWith('https'));
+```
+
+어설션에 메시지를 첨부하려면 어설션할 두 번째 인자로 문자열을 추가합니다(선택적으로 후행 쉼표 포함).
+
+```dart
+assert(urlString.startsWith('https'),
+    'URL ($urlString) should start with "https".');
+```
+
+어설션할 첫 번째 인자는 부울 값으로 확인되는 표현식일 수 있습니다. 표현식의 값이 true이면 어설션이 성공하고 실행이 계속됩니다. false인 경우 어설션이 실패하고 예외(AssertionError)가 발생합니다.
+
+어설션은 정확히 언제 작동할까요? 이는 사용 중인 도구와 프레임워크에 따라 다릅니다.
+
+- Flutter는 디버그 모드에서 어설션을 활성화합니다.
+
+- webdev 서비스와 같은 개발 전용 도구는 일반적으로 기본적으로 어설션을 활성화합니다.
+
+- dart run 및 dart compile js와 같은 일부 도구는 --enable-asserts 명령줄 플래그를 통해 어설션을 지원합니다.
+
+프로덕션 코드에서는 어설션이 무시되고 어설션할 인수가 평가되지 않습니다.
+
+# 클래스 Classes
+
+Dart는 클래스와 믹스인 기반의 상속을 갖춘 객체 지향 언어입니다. 모든 객체는 클래스의 인스턴스이며 Null을 제외한 모든 클래스는 Object의 자손입니다. 믹스인 기반 상속은 모든 클래스(최상위 클래스인 Object? 제외)가 정확히 하나의 상위 클래스를 가지더라도 클래스 내부를 여러 클래스 계층에서 재사용할 수 있음을 의미합니다. Extension 메서드는 클래스를 변경하거나 하위 클래스를 생성하지 않고 클래스에 기능을 추가하는 방법입니다. 클래스 수정자를 사용하면 라이브러리가 클래스의 하위 타입을 지정하는 방법을 제어할 수 있습니다.
+
+## 클래스 멤버 사용하기 Using class members
+
+객체에는 함수와 데이터(각각 메서드와 인스턴스 변수)로 구성된 멤버가 있습니다. 메서드를 호출하면 객체에서 호출됩니다. 메서드는 해당 객체의 함수와 데이터에 액세스할 수 있습니다.
+
+인스턴스 변수나 메서드를 참조하려면 점(.)을 사용하세요.
+
+```dart
+var p = Point(2, 2);
+
+// y 값 얻기.
+assert(p.y == 2);
+
+// p의 distanceTo() 호출하기.
+double distance = p.distanceTo(Point(4, 4));
+```
+
+가장 왼쪽 피연산자가 null일 때 예외를 방지하려면 . 대신 ?.를 사용하세요.
+
+```dart
+// p가 null이 아닌 경우 y 값과 동일한 변수를 설정합니다.
+var a = p?.y;
+```
+
+## 생성자 사용하기 Using constructors
+
+생성자를 사용하여 객체를 생성할 수 있습니다. 생성자 이름은 ClassName 또는 ClassName.identifier일 수 있습니다. 예를 들어 다음 코드는 Point() 및 Point.fromJson() 생성자를 사용하여 Point 객체를 만듭니다:
+
+```dart
+var p1 = Point(2, 2);
+
+var p2 = Point.fromJson({'x': 1, 'y': 2});
+```
+
+다음 코드는 동일한 효과를 갖지만 생성자 이름 앞에 선택적 new 키워드를 사용합니다:
+
+```dart
+var p1 = new Point(2, 2);
+var p2 = new Point.fromJson({'x': 1, 'y': 2});
+```
+
+일부 클래스는 상수 생성자를 제공합니다. 상수 생성자를 사용하여 컴파일 타임 상수를 만들려면 생성자 이름 앞에 const 키워드를 넣으세요:
+
+```dart
+var p = const ImmutablePoint(2, 2);
+```
+
+두 개의 동일한 컴파일 타임 상수를 생성하면 단일 정식 인스턴스가 생성됩니다:
+
+```dart
+var a = const ImmutablePoint(1, 1);
+var b = const ImmutablePoint(1, 1);
+
+assert(identical(a, b)); // a와 b는 같은 인스턴스입니다!
+```
+
+상수 컨텍스트 내에서는 생성자나 리터럴 앞에 const를 생략할 수 있습니다. 예를 들어 const 맵을 생성하는 다음 코드를 살펴보세요:
+
+```dart
+// 많은 const 키워드.
+const pointAndLine = const {
+  'point': const [const ImmutablePoint(0, 0)],
+  'line': const [const ImmutablePoint(1, 10), const ImmutablePoint(-2, 11)],
+};
+```
+
+const 키워드의 첫 번째 사용을 제외하고 모두 생략할 수 있습니다:
+
+```dart
+// 상수 컨텍스트를 설정하는 단 하나의 const.
+const pointAndLine = {
+  'point': [ImmutablePoint(0, 0)],
+  'line': [ImmutablePoint(1, 10), ImmutablePoint(-2, 11)],
+};
+```
+
+상수 생성자가 상수 컨텍스트 외부에 있고 const 없이 호출되면 상수가 아닌 객체가 생성됩니다:
+
+```dart
+var a = const ImmutablePoint(1, 1); // 상수 생성
+var b = ImmutablePoint(1, 1); // 상수를 생성하지 않습니다.
+
+assert(!identical(a, b)); // 같은 인스턴스가 아닙니다!
+```
+
+## 객체 타입 얻기 Getting object's type
+
+런타임에 객체의 타입을 가져오려면 Type 객체를 반환하는 객체 속성 RuntimeType을 사용할 수 있습니다.
+
+```dart
+print('The type of a is ${a.runtimeType}');
+```
+
+```
+경고
+객체의 타입을 테스트하려면 RuntimeType 대신 타입 테스트 연산자를 사용하세요.
+
+프로덕션 환경에서 테스트 Object is Type은 Object.RuntimeType == Type보다 더 안정적입니다.
+```
+
+지금까지 클래스를 사용하는 방법을 살펴보았습니다. 이 섹션의 나머지 부분에서는 클래스를 구현하는 방법을 보여줍니다.
+
+## 인스턴스 변수 Instance variables
+
+인스턴스 변수를 선언하는 방법은 다음과 같습니다:
+
+```dart
+class Point {
+  double? x; // 초기값이 null인 인스턴스 변수 x를 선언합니다.
+  double? y; // 초기값이 null인 y를 선언합니다.
+  double z = 0; // 초기값이 0인 z를 선언합니다.
+}
+```
+
+null 허용 타입으로 선언된 초기화되지 않은 인스턴스 변수의 값은 null입니다. null을 허용하지 않는 인스턴스 변수는 선언 시 초기화되어야 합니다.
+
+모든 인스턴스 변수는 암시적 getter 메서드를 생성합니다. final이 아닌 인스턴스 변수와 이니셜라이저가 없는 late final 인스턴스 변수도 암시적 setter 메서드를 생성합니다. 자세한 내용은 Getter 및 Setter를 확인하세요.
+
+```dart
+class Point {
+  double? x; // 초기값이 null인 인스턴스 변수 x를 선언합니다.
+  double? y; // 초기값이 null인 y를 선언합니다.
+}
+
+void main() {
+  var point = Point();
+  point.x = 4; // x에 setter 메서드 사용.
+  assert(point.x == 4); // x에 getter 메서드 사용.
+  assert(point.y == null); // 기본값은 null.
+}
+```
+
+선언된 위치에서 late가 아닌 인스턴스 변수를 초기화하면, 생성자와 해당 초기화 리스트가 실행되기 전, 인스턴스가 생성될 때 값이 설정됩니다. 결과적으로, late가 아닌 인스턴스 변수의 초기화 표현식(= 뒤)은 this에 액세스할 수 없습니다.
+
+```dart
+double initialX = 1.5;
+
+class Point {
+  // 좋습니다, `this`에 의존하지 않는 선언에 접근할 수 있습니다:
+  double? x = initialX;
+
+  // 오류, 'late' 초기화가 아닌 경우 'this'에 액세스할 수 없습니다:
+  double? y = this.x;
+
+  // 좋습니다, `late` 초기화에서 `this`에 접근할 수 있습니다:
+  late double? z = this.x;
+
+  // 좋습니다, `this.x`와 `this.y`는 표현식이 아니라 매개변수 선언입니다:
+  Point(this.x, this.y);
+}
+```
+인스턴스 변수는 final일 수 있으며, 이 경우 정확히 한 번만 설정해야 합니다. 생성자 매개변수를 사용하거나 생성자의 초기화 리스트를 사용하여 final과 late가 아닌 인스턴스 변수를 선언 시에 초기화하세요.
+
+```dart
+class ProfileMark {
+  final String name;
+  final DateTime start = DateTime.now();
+
+  ProfileMark(this.name);
+  ProfileMark.unnamed() : name = '';
+}
+```
+
+생성자 바디 안에 final 인스턴스 변수의 값을 할당해야 하는 경우 다음 중 하나를 사용할 수 있습니다.
+
+- 팩토리 생성자를 사용하세요.
+- late final을 사용하세요. 그러나 주의하세요: 초기화가 없는 late final은 API에 setter를 추가합니다.
+
+## 암시적 인터페이스 Implicit interfaces
+
+모든 클래스는 클래스와 클래스가 구현하는 모든 인터페이스의 모든 인스턴스 멤버를 포함하는 인터페이스를 암시적으로 정의합니다. B의 구현을 상속하지 않고 B 클래스의 API를 지원하는 A 클래스를 생성하려면 A 클래스가 B 인터페이스를 구현해야 합니다.
+
+클래스는 implements 절에 인터페이스를 선언한 다음, 인터페이스가 요구하는 API를 제공함으로써 하나 이상의 인터페이스를 구현합니다. 예를 들어:
+
+```dart
+// 사람. 암시적 인터페이스에는 greet()이 포함되어 있습니다.
+class Person {
+  // 인터페이스에 있지만 이 라이브러리에만 표시됩니다.
+  final String _name;
+
+  // 생성자이므로 인터페이스에는 없습니다.
+  Person(this._name);
+
+  // 인터페이스에서.
+  String greet(String who) => 'Hello, $who. I am $_name.';
+}
+
+// Person 인터페이스의 구현입니다.
+class Impostor implements Person {
+  String get _name => '';
+
+  String greet(String who) => 'Hi $who. Do you know who I am?';
+}
+
+String greetBob(Person person) => person.greet('Bob');
+
+void main() {
+  print(greetBob(Person('Kathy')));
+  print(greetBob(Impostor()));
+}
+```
+
+다음은 클래스가 여러 인터페이스를 구현하도록 지정하는 예입니다.
+
+```dart
+class Point implements Comparable, Location {...}
+```
+
+## 클래스 변수와 메서드 Class variables and methods
+
+클래스 전체의 변수와 메소드를 구현하려면 static 키워드를 사용하십시오.
+
+## static 변수 Static variables
+
+클래스 정적 변수(클래스 변수)를 구현하려면 static 키워드를 사용하십시오. 클래스 전체 상태 및 상수에 유용합니다.
+
+```dart
+class Queue {
+  static const initialCapacity = 16;
+  // ···
+}
+
+void main() {
+  assert(Queue.initialCapacity == 16);
+}
+```
+
+static 변수는 사용될 때까지 초기화되지 않습니다.
+
+```
+노트
+
+이 페이지는 상수 이름에 lowerCamelCase를 선호하는 스타일 가이드 권장 사항을 따릅니다.
+```
+
+## static 메서드 Static methods
+
+static 메서드(클래스 메서드)는 인스턴스에서 작동하지 않으므로 this에 액세스할 수 없습니다. 그러나 static 변수에는 접근할 수 있습니다. 다음 예제에서 볼 수 있듯이 클래스에서 직접 static 메서드를 호출합니다.
+
+```dart
+import 'dart:math';
+
+class Point {
+  double x, y;
+  Point(this.x, this.y);
+
+  static double distanceBetween(Point a, Point b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    return sqrt(dx * dx + dy * dy);
+  }
+}
+
+void main() {
+  var a = Point(2, 2);
+  var b = Point(4, 4);
+  var distance = Point.distanceBetween(a, b);
+  assert(2.8 < distance && distance < 2.9);
+  print(distance);
+}
+```
+
+```
+노트
+
+일반적이거나 널리 사용되는 유틸리티 및 기능에는 static 메서드 대신 최상위 함수를 사용하는 것이 좋습니다.
+```
+
+static 메서드를 컴파일 타임 상수로 사용할 수 있습니다. 예를 들어 static 메서드를 상수 생성자에 매개 변수로 전달할 수 있습니다.
+
+# 생성자 Constructors
+
+생성자는 클래스의 인스턴스를 생성하는 특별한 함수입니다.
+
+Dart는 다양한 타입의 생성자를 구현합니다. 기본 생성자를 제외하고 이 함수는 클래스와 같은 이름을 사용합니다.
+
+- 생성형 생성자 : 새 인스턴스를 생성하고 인스턴스 변수를 초기화합니다.
+
+- 기본 생성자 : 생성자가 지정되지 않은 경우 새 인스턴스를 만드는 데 사용됩니다. 인자를 사용하지 않으며 이름도 지정되지 않습니다.
+
+- 명명된 생성자 : 생성자의 목적을 명확하게 하거나 동일한 클래스에 대해 여러 생성자를 생성할 수 있도록 허용합니다.
+
+- 상수 생성자 : 인스턴스를 컴파일 타입 상수로 생성합니다.
+
+- 팩토리 생성자 : 하위 타입의 새 인스턴스를 생성하거나 캐시에서 기존 인스턴스를 반환합니다.
+
+- 생성자 리디렉션 : 동일한 클래스의 다른 생성자로 호출을 전달합니다.
+
+## 생성자의 타입 Types of constructors
+
+## 생성형 생성자 Generative constructors
+
+클래스를 인스턴스화 하려면 생성형 생성자를 사용하세요.
+
+```dart
+class Point {
+  // 변수와 값의 초기화 리스트
+  double x = 2.0;
+  double y = 2.0;
+
+  // 형식 매개변수를 초기화하는 생성형 생성자:
+  Point(this.x, this.y);
+}
+```
+
+## 기본 생성자 Default constructors
+
+생성자를 선언하지 않으면 Dart는 기본 생성자를 사용합니다. 기본 생성자는 인자나 이름이 없는 생성형 생성자입니다.
+
+## 명명된 생성자 Named constructors
+
+명명된 생성자를 사용하여 클래스에 대해 여러 생성자를 구현하거나 추가 명확성을 제공합니다:
+
+```dart
+const double xOrigin = 0;
+const double yOrigin = 0;
+
+class Point {
+  final double x;
+  final double y;
+
+  // 생성자 내부가 실행되기 전에
+  // 인스턴스 변수 x와 y를 설정합니다.
+  Point(this.x, this.y);
+
+  // Named constructor
+  Point.origin()
+      : x = xOrigin,
+        y = yOrigin;
+}
+```
+
+하위 클래스는 상위 클래스의 명명된 생성자를 상속하지 않습니다. 상위 클래스에 정의된 명명된 생성자를 사용하여 하위 클래스를 만들려면 하위 클래스에서 해당 생성자를 구현합니다.
+
+## 상수 생성자 Constant constructors
+
+클래스가 변경되지 않는 객체를 생성하는 경우 이러한 객체를 컴파일 타임 상수로 만드세요. 객체를 컴파일 타임 상수로 만들려면 const모든 인스턴스 변수가 final로 설정된 생성자를 정의하세요.
+
+```dart
+class ImmutablePoint {
+  static const ImmutablePoint origin = ImmutablePoint(0, 0);
+
+  final double x, y;
+
+  const ImmutablePoint(this.x, this.y);
+}
+```
+
+상수 생성자가 항상 상수를 생성하는 것은 아닙니다. const가 아닌 컨텍스트에서 호출될 수도 있습니다. 자세한 내용은 생성자 사용 섹션을 참조하세요.
+
+## 생성자 리디렉션 Redirecting constructors
+
+생성자는 동일한 클래스의 다른 생성자로 리디렉션될 수 있습니다. 리디렉션 생성자에는 본문이 비어 있습니다. 생성자는 콜론(:) 뒤에 클래스 이름 대신 this를 사용합니다.
+
+```dart
+class Point {
+  double x, y;
+
+  // 이 클래스의 메인 생성자.
+  Point(this.x, this.y);
+
+  // 메인 생성자에게 위임.
+  Point.alongXAxis(double x) : this(x, 0);
+}
+```
+
+## 팩토리 생성자 Factory constructors
+
+생성자를 구현하는 경우 다음 두 가지 경우 중 하나가 발생하면 factory 키워드를 사용하세요.
+
+- 생성자가 항상 해당 클래스의 새 인스턴스를 생성하는 것은 아닙니다. 팩토리 생성자는 null을 반환할 수 없지만 다음을 반환할 수 있습니다.
+  - 새 인스턴스를 반환하는 대신에 캐시에서 존재하는 인스턴스.
+  - 하위 타입의 새 인스턴스.
+
+- 인스턴스를 생성하기 전에 중요한 작업을 수행해야 합니다. 여기에는 인자 확인이나 초기화 리스트에서 처리할 수 없는 다른 처리 수행이 포함될 수 있습니다.
+
+```
+팁
+
+late final을 사용하여 final 변수의 지연 초기화를 처리할 수도 있습니다 (신중하게!).
+```
+
+다음 예시에는 두 팩토리 생성자가 포함되어 있습니다.
+
+- Logger 팩토리 생성자는 캐시에서 객체를 반환합니다
+
+- Logger.fromJson팩토리 생성자는 JSON 객체에서 final 변수를 초기화합니다.
+
+```dart
+class Logger {
+  final String name;
+  bool mute = false;
+
+  // _cache는 이름 앞의 _ 덕분에
+  // 라이브러리 private입니다.
+  static final Map<String, Logger> _cache = <String, Logger>{};
+
+  factory Logger(String name) {
+    return _cache.putIfAbsent(name, () => Logger._internal(name));
+  }
+
+  factory Logger.fromJson(Map<String, Object> json) {
+    return Logger(json['name'].toString());
+  }
+
+  Logger._internal(this.name);
+
+  void log(String msg) {
+    if (!mute) print(msg);
+  }
+}
+```
+
+```
+경고
+
+팩토리 생성자는 this에 접근할 수 없습니다.
+```
+
+다른 생성자와 마찬가지로 팩토리 생성자를 사용합니다.
+
+```dart
+var logger = Logger('UI');
+logger.log('Button clicked');
+
+var logMap = {'name': 'UI'};
+var loggerJson = Logger.fromJson(logMap);
+```
+
+## 팩토리 생성자 리디렉션 Redirecting factory constructors
+
+팩토리 생성자 리디렉션은 생성자 리디렉션을 호출할 때마다 사용할 다른 클래스의 생성자에 대한 호출을 지정합니다.
+
+```dart
+factory Listenable.merge(List<Listenable> listenables) = _MergingListenable
+```
+
+일반 팩토리 생성자는 다른 클래스의 인스턴스를 생성하고 반환할 수 있는 것처럼 보일 수 있습니다. 이렇게 하면 팩토리 리디렉션이 불필요해집니다. 팩토리 리디렉션에는 다음과 같은 몇 가지 장점이 있습니다.
+
+- 추상 클래스는 다른 클래스의 상수 생성자를 사용하는 상수 생성자를 제공할 수 있습니다.
+
+- 리디렉션 팩토리 생성자를 사용하면 전달자가 매개 변수와 해당 기본값을 반복할 필요가 없습니다.
+
+## 생성자 분리 Constructor tear-offs
+
+Dart를 사용하면 생성자를 호출하지 않고도 생성자를 매개변수로 제공할 수 있습니다. 분리(괄호를 분리하는 것과 같은)는 동일한 매개변수를 사용하여 생성자를 호출하는 클로저 역할을 합니다.
+
+분리가 메서드가 허용하는 것과 동일한 시그니처 및 반환 타입을 가진 생성자인 경우 분리를 매개변수 또는 변수로 사용할 수 있습니다.
+
+분리는 람다나 익명 함수와 다릅니다. 람다는 생성자의 래퍼 역할을 하는 반면, 분리는 생성자입니다.
+
+## 분리 사용 Use Tear-Offs
+
+```dart
+// good
+// 명명된 생성자에 대한 분리: 
+var strings = charCodes.map(String.fromCharCode);  
+
+// 명명되지 않은 생성자에 대한 분리: 
+var buffers = charCodes.map(StringBuffer.new);
+```
+
+## 람다 아님 Not Lambda
+
+```dart
+// bad
+// 명명된 생성자에 대한 람다 대신:
+var strings = charCodes.map((code) => String.fromCharCode(code));
+
+// 명명되지 않은 생성자에 대한 람다 대신:
+var buffers = charCodes.map((code) => StringBuffer(code));
+```
+
+시각적 학습자의 경우 분리에 대한 Decoding Flutter 비디오를 시청하세요.
+
+## 인스턴스 변수 초기화 Instance Variable Initialization
+
+Dart는 세 가지 방법으로 변수를 초기화할 수 있습니다.
+
+## 선언에서 인스턴스 변수 초기화 Initialize instance variables in the declaration
+
+변수를 선언할 때 인스턴스 변수를 초기화합니다.
+
+```dart
+class PointA {
+  double x = 1.0;
+  double y = 2.0;
+
+  // 암시적 기본 생성자는 이러한 변수들을 (1.0,2.0)으로 설정합니다.
+  // PointA();
+
+  @override
+  String toString() {
+    return 'PointA($x,$y)';
+  }
+}
+```
+
+## 형식 매개변수 초기화 사용 Use initializing formal parameters
+
+생성자 인자를 인스턴스 변수에 할당하는 일반적인 패턴을 단순화하기 위해 Dart에는 형식 매개변수 초기화가 있습니다.
+
+생성자 선언에서 this.<propertyName>를 포함하거나 바디를 생략합니다. this 키워드는 현재 인스턴스를 참조합니다.
+
+When the name conflict exists, use this. Otherwise, Dart style omits the this. An exception exists for the generative constructor where you must prefix the initializing formal parameter name with this.
+
+이름 충돌이 있는 경우 this를 사용하세요. 그렇지 않으면, Dart 스타일에서는 this를 생략합니다. 초기화 형식 매개변수 이름 앞에 this를 붙여야 하는 생성형 생성자에는 예외가 있습니다.
+
+이 가이드의 앞부분에서 설명한 것처럼 특정 생성자와 생성자의 특정 부분은 this에 액세스할 수 없습니다. 여기에는 다음이 포함됩니다.
+
+- 팩토리 생성자
+
+- 초기화 리스트의 오른쪽
+
+- 상위 클래스 생성자에 대한 인자
+
+형식 매개변수 초기화는 null 비허용 인스턴스나 final 인스턴스 변수를 초기화할 수 있습니다. 이러한 타입의 변수에는 모두 초기화 또는 기본값이 필요합니다.
+
+```dart
+class PointB {
+  final double x;
+  final double y;
+
+  // x와 y 인스턴스 변수 설정
+  // 생성자 바디가 실행되기 전에.
+  PointB(this.x, this.y);
+
+  // 형식 매개변수 초기화는 선택적 매개변수가 될 수 있습니다.
+  PointB.optional([this.x = 0.0, this.y = 0.0]);
+}
+```
+
+private 필드는 명명된 형식 초기화로 사용할 수 없습니다.
+
+```dart
+class PointB {
+// ...
+
+  PointB.namedPrivate({required double x, required double y})
+      : _x = x,
+        _y = y;
+
+// ...
+}
+```
+
+이는 명명된 변수에도 적용됩니다.
+
+```dart
+class PointC {
+  double x; // 반드시 생성자 안에서 설정
+  double y; // 반드시 생성자 안에서 설정
+
+  // 형식 매개변수 초기화를 사용한 생성형 생성자
+  // with default values
+  PointC.named({this.x = 1.0, this.y = 1.0});
+
+  @override
+  String toString() {
+    return 'PointC.named($x,$y)';
+  }
+}
+
+// 명명된 변수를 사용한 생성자.
+final pointC = PointC.named(x: 2.0, y: 2.0);
+```
+
+형식 매개변수 초기화에서 도입된 모든 변수는 final 변수이며 초기화된 변수의 범위에만 있습니다.
+
+초기화 리스트에서 표현할 수 없는 논리를 수행하려면 해당 논리를 사용하여 팩토리 생성자 또는 static 메서드를 만듭니다. 그런 다음 계산된 값을 일반 생성자에 전달할 수 있습니다.
+
+생성자 매개변수는 null 가능으로 설정되어 초기화되지 않을 수 있습니다.
+
+```dart
+class PointD {
+  double? x; // 생성자에 설정되지 않으면 null
+  double? y; // 생성자에 설정되지 않으면 null
+
+  // 형식 매개변수를 초기화하는 생성형 생성자
+  PointD(this.x, this.y);
+
+  @override
+  String toString() {
+    return 'PointD($x,$y)';
+  }
+}
+```
+
+## 초기화 리스트 사용 Use an initializer list
+
+생성자 본문이 실행되기 전에 인스턴스 변수를 초기화할 수 있습니다. 초기화를 쉼표로 구분하세요.
+
+```dart
+// 초기화 리스트는 생성자 내부가 실행되기 전에
+// 인스턴스 변수를 설정합니다.
+Point.fromJson(Map<String, double> json)
+    : x = json['x']!,
+      y = json['y']! {
+  print('In Point.fromJson(): ($x, $y)');
+}
+```
+
+```
+경고
+
+초기화 목록의 오른쪽은 this에 접근할 수 없습니다.
+```
+
+개발 중에 입력을 검증하려면 초기화 리스트에서 assert를 사용하세요.
+
+```dart
+Point.withAssert(this.x, this.y) : assert(x >= 0) {
+  print('In Point.withAssert(): ($x, $y)');
+}
+```
+
+초기화 리스트는 final 필드 설정에 도움이 됩니다.
+
+다음 예시에서는 초기화 리스트의 세 final 필드를 초기화합니다. 코드를 실행하려면 Run을 클릭하세요.
+
+```dart
+import 'dart:math';
+
+class Point {
+  final double x;
+  final double y;
+  final double distanceFromOrigin;
+
+  Point(double x, double y)
+      : x = x,
+        y = y,
+        distanceFromOrigin = sqrt(x * x + y * y);
+}
+
+void main() {
+  var p = Point(2, 3);
+  print(p.distanceFromOrigin);
+}
+```
+
+## 생성자 상속 Constructor inheritance
+
+하위 클래스 또는 자식 클래스는 상위 클래스 또는 직계 부모 클래스에서 생성자를 상속하지 않습니다. 클래스가 생성자를 선언하지 않으면 기본 생성자 만 사용할 수 있습니다.
+
+클래스는 상위 클래스의 매개변수를 상속받을 수 있습니다. 이것을 상위 매개변수라고 합니다.
+
+생성자는 dusthrehls static 메서드 호출하는 방법과 다소 유사한 방식으로 작동합니다. 하위 클래스가 상위 클래스의 static 메서드를 호출할 수 있는 것처럼 각 하위 클래스는 상위 클래스의 생성자를 호출하여 인스턴스를 초기화할 수 있습니다. 이 과정은 생성자 내부나 시그니처를 "상속"하지 않습니다.
+
+## 기본이 아닌 상위 클래스 생성자
+
+Dart는 다음 순서로 생성자를 실행합니다.
+
+- 초기화 리스트
+
+- 상위 클래스의 이름 없고 인자 없는 생성자.
+
+- 메인 클래스의 인자 없는 생성자.
+
+상위 클래스에 이름 없고 인자 없는 생성자가 없는 경우 상위 클래스의 생성자 중 하나를 호출합니다. 생성자 내부(있는 경우) 앞, 콜론( :) 뒤에 상위 클래스 생성자를 지정합니다.
+
+다음 예제에서 Employee클래스 생성자는 해당 상위 클래스 Person에 대해 명명된 생성자를 호출합니다. 다음 코드를 실행하려면 Run을 클릭하세요.
+
+```dart
+class Person {
+  String? firstName;
+
+  Person.fromJson(Map data) {
+    print('in Person');
+  }
+}
+
+class Employee extends Person {
+  // Person은 기본 생성자가 없습니다;
+  // super.fromJson()을 반드시 호출해야합니다.
+  Employee.fromJson(Map data) : super.fromJson(data) {
+    print('in Employee');
+  }
+}
+
+void main() {
+  var employee = Employee.fromJson({});
+  print(employee);
+  // 출력:
+  // Person 안의
+  // Employee 안의
+  // Instance of 'Employee'
+}
+```
+
+Dart는 생성자를 호출하기 전에 상위 클래스 생성자에 대한 인자를 평가하므로 인자는 함수 호출과 같은 표현식이 될 수 있습니다.
+
+```dart
+class Employee extends Person {
+  Employee() : super.fromJson(fetchDefaultData());
+  // ···
+}
+```
+
+```
+경고
+
+상위 클래스 생성자에 대한 인자는 this에 액세스할 수 없습니다. 예를 들어 인자는 static 메서드를 호출할 수 있지만 인스턴스 메서드는 호출할 수 없습니다.
+```
+
+## 상위 매개변수 Super parameters
+
+각 매개변수를 생성자의 상위 호출에 전달하지 않으려면, 상위 초기화 매개변수를 사용하여 매개변수를 지정된 상위 클래스 생성자 또는 기본 상위 클래스 생성자에 전달하세요. 생성자 리디렉션과 함께 이 기능을 사용할 수 없습니다 . 상위 초기화 매개변수는 형식 매개변수 초기화와 같은 구문과 의미를 가집니다.
+
+```
+버전 노트
+
+상위 초기화 매개변수를 사용하려면 언어 버전 2.17 이상이 필요합니다. 이전 언어 버전을 사용하는 경우 모든 상위 생성자 매개변수를 수동으로 전달해야 합니다.
+```
+
+상위 생성자 호출에 위치 인자가 포함된 경우 상위 초기화 매개변수는 위치 매개변수일 수 없습니다.
+
+```dart
+class Vector2d {
+  final double x;
+  final double y;
+
+  Vector2d(this.x, this.y);
+}
+
+class Vector3d extends Vector2d {
+  final double z;
+
+  // x와 y 매개변수를 다음과 같이 기본 상위 생성자로 전달하세요:
+  // Vector3d(final double x, final double y, this.z) : super(x, y);
+  Vector3d(super.x, super.y, this.z);
+}
+```
+
+더 자세히 설명하려면 다음 예시를 고려하세요.
+
+```dart
+  // 위치 인자와 함께 상위 생성자(`super(0)`)를 호출하는 경우
+  // 상위 매개변수(`super.x`)를 사용하면 오류가 발생합니다.
+  Vector3d.xAxisError(super.x): z = 0, super(0); // 나쁨
+```
+
+이 명명된 생성자는 x값을 두 번 설정하려고 시도합니다. 한 번은 상위 생성자에서, 한 번은 위치 상위 매개변수로 설정합니다. 둘 다 위치 매개변수 x를 다루므로 오류가 발생합니다.
+
+상위 생성자에 명명된 인자가 있는 경우, 명명된 상위 매개변수(다음 예시의 super.y)와 상위 생성자 호출(super.named(x: 0))에 대한 명명된 인자 간에 이를 분할할 수 있습니다.
+
+```dart
+class Vector2d {
+  // ...
+  Vector2d.named({required this.x, required this.y});
+}
+
+class Vector3d extends Vector2d {
+  final double z;
+
+  // y 매개변수를 명명된 상위 생성자에 다음과 같이 전달하세요:
+  // Vector3d.yzPlane({required double y, required this.z})
+  //       : super.named(x: 0, y: y);
+  Vector3d.yzPlane({required super.y, required this.z}) : super.named(x: 0);
+}
+```
+
+# 메서드 Methods
+
+메소드는 객체에 대한 동작을 제공하는 함수입니다.
+
+## 인스턴스 메서드 Instance methods
+
+객체의 인스턴스 메소드는 인스턴스 변수 및 this에 접근할 수 있습니다. 다음 샘플의 메서드 distanceTo()는 인스턴스 메서드의 예시입니다.
+
+```dart
+import 'dart:math';
+
+class Point {
+  final double x;
+  final double y;
+
+  // 생성자 내부가 실행되기 전에
+  // 인스턴스 변수 x와 y를 설정합니다.
+  Point(this.x, this.y);
+
+  double distanceTo(Point other) {
+    var dx = x - other.x;
+    var dy = y - other.y;
+    return sqrt(dx * dx + dy * dy);
+  }
+}
+```
+
+## 연산자 Operators
+
+대부분의 연산자는 특별한 이름을 가진 인스턴스 메서드입니다. Dart를 사용하면 다음 이름으로 연산자를 정의할 수 있습니다.
+
+| | | | | | |
+|---|---|---|---|---|---|
+| < | > | <= | >= | == | ~ |
+| - | + | / | ~/ | * | % |
+| \| | ^ | & | << | >>> | >> |
+| []= | [] | | | | |
+
+```
+노트
+
+!=와 같은 일부 연산자가 목록에 없다는 것을 눈치채셨을 겁니다. 이러한 연산자는 인스턴스 메서드가 아닙니다.
+
+이들의 행동은 Dart에 내장되어 있습니다.
+```
+
+연산자를 선언하려면 내장된 식별자 operator를 사용한 다음 정의하는 연산자를 사용하십시오. 다음 예시에서는 벡터 더하기(+), 빼기(-) 및 동등(==)을 정의합니다.
+
+```dart
+class Vector {
+  final int x, y;
+
+  Vector(this.x, this.y);
+
+  Vector operator +(Vector v) => Vector(x + v.x, y + v.y);
+  Vector operator -(Vector v) => Vector(x - v.x, y - v.y);
+
+  @override
+  bool operator ==(Object other) =>
+      other is Vector && x == other.x && y == other.y;
+
+  @override
+  int get hashCode => Object.hash(x, y);
+}
+
+void main() {
+  final v = Vector(2, 3);
+  final w = Vector(2, 2);
+
+  assert(v + w == Vector(4, 5));
+  assert(v - w == Vector(0, 1));
+}
+```
+
+## 게터와 세터 Getters and Setters
+
+Getter 및 Setter는 객체의 속성에 대한 읽기 및 쓰기 접근을 제공하는 특수 메서드입니다. 각 인스턴스 변수에는 암시적 getter가 있고 적절한 경우 setter가 있다는 점을 기억하세요. get과 set 키워드를 사용하여 getter 및 setter를 구현하여 추가 속성을 생성할 수 있습니다.
+
+```dart
+class Rectangle {
+  double left, top, width, height;
+
+  Rectangle(this.left, this.top, this.width, this.height);
+
+  // 두 계산된 속성 right과 bottom을 정의하세요:
+  double get right => left + width;
+  set right(double value) => left = value - width;
+  double get bottom => top + height;
+  set bottom(double value) => top = value - height;
+}
+
+void main() {
+  var rect = Rectangle(3, 4, 20, 15);
+  assert(rect.left == 3);
+  rect.right = 12;
+  assert(rect.left == -8);
+}
+```
+
+getter 및 setter를 사용하면 클라이언트 코드를 변경하지 않고도 인스턴스 변수로 시작하여 나중에 메서드로 래핑할 수 있습니다.
+
+```
+노트
+
+증가(++)와 같은 연산자는 getter가 명시적으로 정의되었는지 여부에 관계없이 예상대로 작동합니다.
+
+예상치 못한 부작용을 방지하기 위해 연산자는 getter를 정확히 한 번 호출하여 해당 값을 임시 변수에 저장합니다.
+```
+
+## 추상 메서드 Absctract method
+
+인스턴스, getter 및 setter 메서드는 추상화되어 인터페이스를 정의하지만 구현은 다른 클래스에 맡길 수 있습니다. 추상 메서드는 추상 클래스나 믹스인에만 존재할 수 있습니다.
+
+메서드를 추상화하려면 메서드 내부 대신 세미콜론(;)을 사용하십시오.
+
+```dart
+abstract class Doer {
+  // 인스턴스 변수와 메서드를 정의하세요...
+
+  void doSomething(); // 추상 메서드를 정의하세요.
+}
+
+class EffectiveDoer extends Doer {
+  void doSomething() {
+    // 구현을 제공하므로 여기서 메서드는 추상화되지 않습니다...
+  }
+}
+```
+
+# 클래스 확장 Extends a class
+
+extneds는 하위 클래스를 만드는 데, super는 상위 클래스를 참조하는 데 사용하세요.
+
+```dart
+class Television {
+  void turnOn() {
+    _illuminateDisplay();
+    _activateIrSensor();
+  }
+  // ···
+}
+
+class SmartTelevision extends Television {
+  void turnOn() {
+    super.turnOn();
+    _bootNetworkInterface();
+    _initializeMemory();
+    _upgradeApps();
+  }
+  // ···
+}
+```
+
+extends의 다른 사용법에 대해서는 제네릭 페이지의 매개변수화된 타입에 대한 토론을 참조하세요.
+
+## 멤버 재정의 Overriding members
+
+하위 클래스는 인스턴스 메서드(연산자 포함), getter 및 setter를 재정의할 수 있습니다. @override 주석을 사용하여 의도적으로 멤버를 재정의하고 있음을 나타낼 수 있습니다.
+
+```dart
+class Television {
+  // ···
+  set contrast(int value) {...}
+}
+
+class SmartTelevision extends Television {
+  @override
+  set contrast(num value) {...}
+  // ···
+}
+```
+
+메서드 재정의 선언은 여러 가지 방법으로 재정의하는 메서드와 일치해야 합니다.
+
+- 반환 타입은 재정의된 메서드의 반환 타입과 동일한 타입(또는 하위 타입)이어야 합니다.
+
+- 매개변수 타입은 재정의된 메서드의 매개변수 타입과 동일한 타입(또는 상위 타입)이어야 합니다. 앞의 예시에서 SmartTelevision의 contrast setter는 매개변수 타입을 int 에서 상위 타입인 num으로 변경합니다.
+
+- 재정의된 메서드가 n개의 위치 매개변수를 허용하는 경우 재정의하는 메서드는 n개의 위치 매개변수도 허용해야 합니다.
+
+- 제네릭 메서드는 제네릭이 아닌 메서드를 재정의할 수 없으며 제네릭이 아닌 메서드는 제네릭 메서드를 재정의할 수 없습니다.
+
+때로는 메서드 매개변수나 인스턴스 변수의 타입을 좁히고 싶을 수도 있습니다. 이는 일반적인 규칙을 위반하며 런타임에 타입 오류를 일으킬 수 있다는 점에서 다운캐스팅과 유사합니다. 그러나 코드에서 타입 오류가 발생하지 않는다는 것을 보장할 수 있다면 타입을 좁힐 수 있습니다. 이 경우 매개변수 선언에 covariant 키워드를 사용할 수 있습니다. 자세한 내용은 Dart 언어 사양을 참조하세요.
+
+```
+경고
+
+== 을 재정의하는 경우 객체의 hashCode getter도 재정의해야 합니다. == 및 hashCoded 재정의에 대한 예시 맵 키 구현에서 확인하세요.
+```
+
+## noSuchMethod()
+
+코드가 존재하지 않는 메서드나 인스턴스 변수를 사용하려고 시도할 때마다 감지하거나 반응하려면 noSuchMethod()를 재정의하면 됩니다.
+
+```dart
+class A {
+  // noSuchMethod를 재정의하지 않는 한,
+  // 존재하지 않는 멤버를 사용하면 NoSuchMethodError가 발생합니다.
+  @override
+  void noSuchMethod(Invocation invocation) {
+    print('You tried to use a non-existent member: '
+        '${invocation.memberName}');
+  }
+}
+```
+
+다음 중 하나에 해당하지 않는 한 구현되지 않은 메서드를 호출할 수 없습니다.
+
+- 수신자는 정적 타입 dynamic을 가집니다.
+
+- 수신자는 구현되지 않은 메서드(추상은 괜찮음)를 정의하는 정적 타입을 가지고, 수신자의 동적 타입은 Object 클래스와의 것과는 다른 noSuchMethod()의 구현을 가집니다.
+
+자세한 내용은 비공식 noSuchMethod 전달 사양을 참조하세요.
