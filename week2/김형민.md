@@ -1,0 +1,1065 @@
+# Dart의 타입 시스템 The Dart type system
+
+다트는 타입 안전한 언어입니다. 다트 언어는 변수의 값이 항상 변수의 정적 타입과 일치함을 보장하기 위해 정적 타입 검사와 런타임 검사의 조합을 사용합니다(때때로 건전한 타입이라고도 함). 타입을 표기하는 것은 의무적이지만 타입 추론때문에 타입 주석은 선택적입니다.
+
+정적 타입 검사의 한 가지 이점은 다트의 정적 분석기를 사용하여 컴파일 타임에 버그를 찾는 능력입니다.
+
+제네릭 클래스에 타입 주석을 추가하면 대부분의 정적 분석 오류를 고칠 수 있습니다. 가장 일반적인 제네릭 클래스는 컬렉션 타입 List<T>와 Map<K, V>입니다.
+
+예를 들어, 아래와 같은 코드에서 printInts() 함수는 정수 리스트를 출력하고, main() 함수는 리스트를 만들어 printInts()에 전달합니다.
+
+```dart
+void printInts(List<int> a) => print(a);
+
+void main() {
+  final list = [];
+
+  list.add(1);
+  list.add('2');
+  printInts(list);
+}
+```
+
+위의 코드는 printInts(list)를 호출할 때 list에서 타입 오류가 발생합니다:
+
+```
+error - The argument type 'List<dynamic>' can't be assigned to the parameter type 'List<int>'. - argument_type_not_assignable
+```
+
+오류는 List<dynamic>에서 List<int>로 불건전한 암묵적 타입 캐스팅을 강조합니다. list 변수는 정적 타입 List<dynamic>입니다. 이것은 초기화 선언 var list = []이 dynamic보다 더 구체적인 타입 인자를 추론할만한 충분한 정보를 분석기에 제공하지 않았기 때문입니다. printInts() 함수는 타입 List<int>의 매개변수를 예상하므로 타입 불일치가 발생합니다.
+
+타입 주석(<int>와 같은)을 리스트 생성에 추가할 때 분석기는 문자열 인자를 정수 매개변수에 할당할 수 없다고 알려줍니다. 코드의 list.add('2')에서 홑따옴표를 제거하면 정적 분석을 통과하고 오류나 경고 없이 실행합니다.
+
+```dart
+void printInts(List<int> a) => print(a);
+
+void main() {
+  final list = <int>[];
+  list.add(1);
+  list.add(2);
+  printInts(list);
+}
+```
+
+DartPad에서 확인해보세요.
+
+## 건전성이란 무엇인가? What is soundness?
+
+건전성은 프로그램이 유효하지 않은 특정 상태가 될 수 없도록 보장하는 것입니다. 건전한 타입 시스템은 표현식이 표현식의 정적 타입과 일치하지 않는 값을 평가하는 상태가 될 수 없음을 의미합니다. 예를 들어 표현식의 정적 타입이 String이라면 런타임에 표현식을 평가할 때 문자열만 얻는 것이 보장됩니다.
+
+Dart의 타입 시스템은 Java, C#처럼 건전합니다. 정적 검사(컴파일 타임 오류)와 런타임 검사의 조합을 사용하여 건전성을 강제합니다. 예를 들어, String을 int에 할당하면 컴파일 타임 오류가 발생합니다. String이 아닌 객체에 as String을 사용하여 String으로 캐스팅하면 런타임 오류와 함께 실패합니다.
+
+## 건전성의 이점 The benefits of soundness
+
+건전한 타입 시스템은 몇 가지 이점이 있습니다:
+
+- 컴파일 타임에 타입 관련 버그를 드러냅니다.
+    건전한 타입 시스템은 코드가 타입이 명확하도록 강제하여 런타임에 발견하기 어려운 타입 관련 버그가 컴파일 타임에 드러나도록 합니다.
+
+- 더 읽기 쉬운 코드.
+    실제로 구체적인 타입을 갖는 값에 의존하므로 코드가 더 읽기 쉽습니다. 건전한 Dart에서 타입은 거짓말할 수 없습니다.
+
+- 더 유지보수가 가능한 코드.
+    건전한 타입 시스템을 사용하면 코드 하나를 변경할 때 타입 시스템이 손상된 코드에 대해 경고할 수 있습니다.
+
+- 더 나은 AOT 컴파일.
+    AOT 컴파일은 타입없이 가능하지만, 생성된 코드는 덜 효율적입니다.
+
+## 정적 분석 통과에 대한 팁 Tips for passing static analysis
+
+정적 타입에 대한 대부분의 규칙은 이해하기 쉽습니다. 여기 덜 명백한 규칙 몇 가지가 있습니다.
+
+- 메서드를 재정의할 때 건전한 반환 타입을 사용하세요.
+- 메서드를 재정의할 때 건전한 매개변수를 사용하세요.
+- dynamic 리스트를 타입이 있는 리스트처럼 사용하지 마세요.
+
+위의 규칙들을 다음의 타입 계층 구조를 사용한 예시와 함께 세부적으로 살펴봅시다.
+
+## 메서드를 재정의할 때 건전한 반환 타입을 사용하세요. Use sound return types when overriding methods
+
+하위 클래스에 있는 메서드의 반환 타입은 상위 클래스에 있는 메서드의 반환 타입과 같거나 하위 타입이어야 합니다. Animal 클래스에 있는 getter 메서드를 생각해보세요:
+
+```dart
+class Animal {
+  void chase(Animal a) { ... }
+  
+  Animal get parent => ...
+}
+```
+
+parent getter 메서드는 Animal을 반환합니다. 하위 클래스 HoneyBadger에서 HoneyBadger(또는 Animal의 다른 하위 타입)을 getter의 반환 타입으로 대체할 수 있지만 관계없는 타입은 허용되지 않습니다.
+
+```dart
+// 정적 분석: 성공
+class HoneyBadger extends Animal {
+  @override
+  void chase(Animal a) { ... }
+
+  @override
+  HoneyBadger get parent => ...
+}
+```
+
+```dart
+// 정적 분석: 실패
+class HoneyBadger extends Animal {
+  @override
+  void chase(Animal a) { ... }
+
+  @override
+  Root get parent => ...
+}
+```
+
+## 메서드를 재정의할 때 건전한 매개변수 타입을 사용하세요. Use sound parameter types when overriding methods
+
+재정의된 메서드의 매개변수는 상위 클래스의 해당 매개변수와 같은 타입이거나 상위 타입이어야 합니다. 원래 매개변수의 하위 타입을 대체하여 매개변수 타입을  구체화하지 마세요.
+
+```
+노트
+
+하위타입을 사용하는 합리적인 이유가 있다면 convariant 키워드를 사용하세요.
+```
+
+Animal 클래스에 대한 chase(Animal) 메서드를 생각해보세요.
+
+```dart
+class Animal {
+  void chase(Animal a) { ... }
+  Animal get parent => ...
+}
+```
+
+chase() 메서드는 Animal을 매개변수로 가집니다. HoneyBadger는 무엇이든 쫓을 수 있습니다. chase() 메서드가 어떤 것(Object)을 매개변수로 받든 괜찮습니다.
+
+```dart
+// 정적 분석: 성공
+class HoneyBadger extends Animal {
+  @override
+  void chase(Object a) { ... }
+
+  @override
+  Animal get parent => ...
+}
+```
+
+다음 코드는 chase() 메서드의 매개변수를 Animal에서 Animal의 하위 타입인 Mouse로 구체화했습니다.
+
+```dart
+// 정적 분석: 실패
+class Mouse extends Animal { ... }
+
+class Cat extends Animal {
+  @override
+  void chase(Mouse a) { ... }
+}
+```
+
+이 코드는 고양이를 정의하고 악어 다음으로 보내는 것이 가능하기 때문에 타입이 안전하지 않습니다.
+
+```dart
+Animal a = Cat();
+a.chase(Alligator()); // 타입이 안전하지 않거나 고양이가 안전하지 않습니다.
+```
+
+## dynamic 리스트를 타입이 있는 리스트처럼 사용하지 마세요. Don't use a dynamic list as a typed list
+
+dynamic 리스트는 다른 타입이 존재하는 리스트를 원할 때 사용하면 좋습니다. 그러나 dynamic 리스트를 타입이 있는 리스트처럼 사용할 수는 없습니다.
+
+이 규칙은 제네릭 타입의 인스턴스에도 적용됩니다.
+
+다음 코드는 Dog의 dynamic 리스트를 만들고 Cat 타입의 리스트를 할당합니다. 이것은 정적 분석 동안 오류를 생성합니다.
+
+```dart
+// 정적 분석: 실패
+void main() {
+  List<Cat> foo = <dynamic>[Dog()]; // 오류
+  List<dynamic> bar = <dynamic>[Dog(), Cat()]; // 괜찮음
+}
+```
+
+## 런타임 검사 Runtime checks
+
+런타임 검사는 컴파일 타입에 발견되지 못한 타입 안전성 이슈를 다룹니다.
+
+예를 들어 아래의 코드는 런타임에 예외를 발생시킵니다. dogs 리스트를 cats 리스트로 캐스팅하는 것은 오류이기 때문입니다.
+
+```dart
+// 정적 분석: 실패
+void main() {
+  List<Animal> animals = <Dog>[Dog()];
+  List<Cat> cats = animals as List<Cat>;
+}
+```
+
+## 타입 추론 Type inference
+
+분석기는 필드, 메서드, 로컬 변수, 제네릭 타입 인자의 타입을 추론할 수 있습니다. 분석기가 구체적인 타입을 추론하기에 충분한 정보를 갖지 않으면 dynamic 타입을 사용합니다.
+
+여기에 타입 추론이 어떻게 제네릭과 함께 작동하는지에 대한 예시가 있습니다. 이 예시에서는 arguments라고 명명된 변수가 문자열 키와 다양한 타입의 값이 짝을 이루는 맵을 담고 있습니다.
+
+변수를 명시적으로 입력하는 경우, 다음과 같이 작성할 수 있습니다.
+
+```dart
+Map<String, dynamic> arguments = {'argA': 'hello', 'argB': 42};
+```
+
+위의 코드 대신 var 또는 final을 사용하여 Dart가 타입을 추론하게 할 수 있습니다.
+
+```dart
+var arguments = {'argA': 'hello', 'argB': 42}; // Map<String, Object>
+```
+
+맵 리터럴은 엔트리로부터 해당 타입을 추론하고 변수는 맵 리터럴의 타입으로부터 해당 타입을 추론합니다. 맵에서 키는 문자열이지만 값은 다른 타입을 갖습니다(상한이 Object인 String과 int). 그래서 맵 리터럴은 타입 Map<String, Object>를 가지며, arguments 변수도 마찬가지 입니다.
+
+## 필드와 메서드 추론 Field and method inference
+
+구체적입 타입이 없고 상위 클래스의 필드나 메서드를 재정의한 필드 또는 메서드는 상위 클래스 메서드나 필드의 타입을 상속합니다.
+
+선언하지 않았거나 타입을 상속했지만 초기값을 선언하지 않은 필드는 초기값을 근거로 추론한 타입을 가집니다.
+
+## 정적 필드 추론 Static field inference
+
+정적 필드와 변수는 초기화 구문으로부터 타입을 얻습니다. 순환이 발생하면 추론이 실패하는 것에 주의하세요(즉 변수 타입을 추론하는 것은 그 변수의 타입을 아는 것에 달려있습니다).
+
+## 로컬 변수 추론 Local variable inference
+
+로컬 변수 타입은 초기화 구문(있는 경우)으로부터 추론됩니다. 나중에 할당하는 것은 고려되지 않습니다. 이것은 너무 정확한 타입이 추론될 수 있음을 의미합니다. 그렇다면 타입 주석을 추가할 수 있습니다.
+
+```dart
+// 정적 분석: 실패
+var x = 3; // x는 int로 추론됩니다.
+x = 4.0;
+```
+
+```dart
+num y = 3; // num은 double 또는 int가 될 수 있습니다.
+y = 4.0;
+```
+
+## 타입 인자 추론 Type argument inference
+
+생성자 호출과 제네릭 메서드 호출에 대한 타입 인자는 발생 컨텍스트로부터 발생한 하향식 정보와 생성자나 제네릭 메서드의 인자로부터 발생한 상향식 정보의 조합으로 추론됩니다. 추론이 원하거나 기대한 바와 다르면 타입 인자를 명시적으로 규정할 수 있습니다.
+
+```dart
+// <int>[]로 추론됩니다.
+List<int> listOfInt = [];
+
+// <double>[3.0]으로 추론됩니다.
+var listOfDouble = [3.0];
+
+// Iterable<int>로 추론됩니다.
+var ints = listOfDouble.map((x) => x.toInt());
+```
+
+마지막 예시에서 x는 하향식 정보를 사용하여 double로 추론됩니다. 클로저의 반환 타입은 상향식 정보를 사용하여 int로 추론됩니다. Dart는 map() 메서의 타입 인자를 <int>로 추론할 때 이 반환 타입을 상향식 정보로 사용합니다.
+
+## 타입 대체하기 Substituting types
+
+메서드를 재정의하면 이전 메서드의 타입을 새 메서드의 타입으로 대체하게 됩니다. 이와 비슷하게, 인자를 함수에 전달하는 경우 선언된 타입을 가지는 매개변수의 타입은 실제 인자의 다른 타입으로 대체하게 됩니다. 언제 한 타입을 가진 것을 하위타입이나 상위타입을 가진 것으로 대체할 수 있을 까요?
+
+타입을 대체할 때 소비자와 생산자의 관점에서 생각하는 것은 도움이 됩니다. 소비자는 타입을 받아들이고 생산자는 타입을 만듭니다.
+
+소비자의 타입을 상위 타입으로 대체하고, 생산자의 타입을 하위 타입으로 대체할 수 있습니다.
+
+간단한 타입 할당과 제네릭 타입 할당의 예시를 살펴봅시다.
+
+## 간단한 타입 할당 Simple type assignment
+
+객체를 객체에 할당할 때, 언제 한 타입을 다른 타입으로 대체할 수 있을까요? 그 답은 객체가 소비자인지 생산자인지에 달려있습니다.
+
+다음의 타입 계층 구조를 생각해보세요.
+
+Cat c가 소비자이고 Cat()이 생산자인 다음의 간단한 할당을 고려해보세요.
+
+```dart
+Cat c = Cat();
+```
+
+소비하는 입장에서 구체적인 타입(Cat)을 소비하는 무언가를 아무것(Anything)이나 소비하는 무언가로 대체하는 것은 안전합니다. 그래서 Cat c를 Animal c로 대체하는 것이 허용됩니다. Animal은 Cat의 상위 타입이기 때문입니다.
+
+```dart
+정적 분석: 성공
+Animal c = Cat();
+```
+
+그러나 Cat c를 MaineCoon c로 대체하면 타입 안전성이 손상됩니다. 상위 클래스 가 Lion과 같이 다른 행동을 가진 Cat 타입을 제공할 수 있기 때문입니다.
+
+```dart
+// 정적 분석: 실패
+MainCoon c = Cat();
+```
+
+## 제네릭 타입 할당 Generic type assignment
+
+제네릭 타입에 대한 규칙도 동일할까요? 그렇습니다. 동물 리스트의 계층 구조를 생각해보세요. Cat 리스트는 Animal 리스트의 하위 타입이고 MainCoon 리스트의 상위 타입입니다.
+
+다음 예시에서 MaineCoon 리스트를 myCats 리스트에 할당할 수 있습니다. List<MaineCoon>은 List<Cat>의 하위타입이기 때문입니다.
+
+```dart
+// 정적 분석: 성공
+List<MaineCoon> myMaineCoons = ...
+List<Cat> myCats = myMaineCoons;
+```
+
+다른 방향은 어떨까요? Animal 리스트를 List<Cat>에 할당할 수 있을까요?
+
+```dart
+// 정적 분석: 실패
+List<Animal> myAnimals = ...
+List<Cat> myCats = myAnimals;
+```
+
+이 할당은 정적 분석을 통과할 수 없습니다. 이것은 암시적 다운 캐스팅을 생성하기 때문입니다. 이것은 Animal과 같은 비동적 타입에서 허용되지 않습니다.
+
+위와 같은 코드가 정적 분석을 통과하도록 하려면 명시적 캐스팅을 사용할 수 있습니다.
+
+```dart
+List<Animal> myAnimals = ...
+List<Cat> myCats = myAnimals as List<Cat>;
+```
+
+그러나 myAnimals같이 캐스팅되는 리스트의 실제 타입에 따라 명시적 캐스팅은 여전히 런타임에 실패할 수 있습니다.
+
+## 메서드 Methods
+
+메서드를 재정의할 때도 여전히 생산자와 소비자의 규칮기 적용됩니다. 예를 들어:
+
+chase(Animal)같은 소비자의 경우 매개변수 타입을 상위 타입으로 대체할 수 있습니다. parent getter 메서드같은 생산자의 경우 반환 타입을 하위타입으로 대체할 수 있습니다.
+
+더 많은 정보에 대한 것은 메서드를 재정의할 때 건전한 반환 타입을 사용하세요와 메서드를 재정의할 때 건전한 매개변수 타입을 사용하세요를 참고하세요.
+
+## 다른 리소스 Other resources
+
+다음 리소스에는 건전한 Dart에 대한 더 많은 정보가 있습니다.
+
+- 일반적인 타입 문제 해결하기 - 건전한 Dart 코드를 작성할 때 마주치는 에러와 그것을 고치는 방법.
+
+- 타입 승격 실패 해결하기 - 타입 승격 실패 오류를 고치는 방법을 이해하고 배우세요.
+
+- 건전한 null 안전성 - 건전한 null 안전성을 가진 코드를 작성하는 법에 대해 배우세요.
+
+- 정적 분석 커스터마이징 - 분석 옵션 파일을 사용한 분석기와 린터를 세팅하고 커스터마이징 하는 방법.
+
+# 패턴 Patterns
+
+```
+버전 노트
+
+패턴은 최소 3.0의 언어 버전을 요구합니다.
+```
+
+패턴은 문과 표현식 같은 Dart 언어의 문법적 범주입니다. 패턴은 실제 값과 일치할 수 있는 값 집합의 형태를 나타냅니다.
+
+이 페이지는 설명합니다:
+
+- 패턴이 하는 일.
+
+- Dart 코드에서 패턴이 허용되는 위치.
+
+- 패턴의 일반적인 사용 예시가 무엇인지.
+
+패턴의 다양한 형태에 대해 알고 싶다면, 패턴 타입 페이지를 방문하세요.
+
+## 패턴이 하는 일 What Patterns do
+
+일반적으로 패턴은 패턴의 맥락과 모양에 따라 값을 매칭하거나 구조 분해 할당 혹은 둘 다 할 수 있습니다.
+
+먼저 패턴 매칭은 주어진 값이 다음과 같은지 확인할 수 있습니다.
+
+- 특정한 형태를 가졌는지.
+
+- 특정 상수인지.
+
+- 어떤 다른 것과 동일한지.
+
+- 특정한 타입을 가졌는지.
+
+그런 다음 패턴 구조 분해 할당은 해당 값을 구성 부분으로 나누는 편리한 선언적 구문을 제공합니다. 같은 패턴을 사용하면 프로세스의 일부 또는 전체에 변수를 바인딩할수도 있습니다.
+
+## 매칭 Matching
+
+패턴은 항상 값이 예상한 형식인지 테스트합니다. 즉, 값이 패턴과 일치하는지 확인합니다.
+
+일치 항목을 구성하는 것은 패턴의 종류에 따라 다릅니다. 예를 들어, 값이 패턴의 상수와 일치하면 상수 패턴이 일치합니다.
+
+```dart
+switch (number) {
+  // 1 == number 이면 상수 패턴이 일치합니다.
+  case 1:
+    print('one');
+}
+```
+
+많은 패턴은 외부나 내부 패턴으로 불리는 하위 패턴을 이용합니다. 패턴은 재귀적으로 하위 패턴과 일치합니다. 예를 들어, 컬렉션 타입 패턴의 개별 필드 는 변수 패턴 또는 상수 패턴일 수 있습니다.
+
+```dart
+const a = 'a';
+const b = 'b';
+
+switch (obj) {
+  // List 패턴 [a, b]는 obj가  두 필드가 있는 리스트인 경우 먼저 obj와 매칭합니다.
+  // 그 다음 해당 필드가 상수 하위패턴 'a', 'b'와 일치하는 경우. 
+  case [a, b]:
+    print('$a, $b');
+}
+```
+
+일치하는 값의 일부를 무시하려면 플레이스홀더같은 와일드카드 패턴을 사용할 수 있습니다. 리스트 패턴의 경우, 나머지 요소를 사용할 수 있습니다.
+
+## 구조 분해 할당 Destructuring
+
+객체와 패턴이 일치할 때 패턴은 객체의 데이터에 접근할 수 있고 부분적으로 추출할 수 있습니다. 즉 패턴은 객체를 구조 분해 할당합니다:
+
+```dart
+var numList = [1, 2, 3];
+// 리스트 패턴 [a, b, c]는 numList로부터 세 요소로 구조 분해 할당합니다.
+var [a, b, c,] = numList;
+// ...그리고 새 변수에 할당합니다.
+print(a+b+c);
+```
+
+구조 분해 할당 패턴에서 어떤 종류의 패턴은 중첩할 수 있습니다. 예를 들어, 아래의 case 패턴은 첫 요소가 'a'나 'b'인 두 요소 리스트를 매칭하거나 구조 분해 할당할 수 있습니다.
+
+```dart
+switch (list) {
+  case ['a' || 'b', var c]:
+    print(c);
+}
+```
+
+## 장소 패턴이 나타날 수 있습니다. Places patterns can appear
+
+Dart 언어에서 몇 장소에 패턴을 사용할 수 있습니다.
+
+- 로컬 변수 선언과 할당
+
+- for, for-in 반복문
+
+- if-case와 switch-case
+
+- 컬렉션 리터럴에서 제어문
+
+이 섹션은 패턴을 사용한 매칭과 구조 분해 할당의 일반적인 사용 예시를 설명합니다.
+
+## 변수 선언 Variable declaration
+
+Dart가 로컬 변수 선언을 허용하는 어디에든 패턴 변수 선언을 사용할 수 있습니다. 패턴은 선언의 오른쪽에 있는 값과 매칭합니다. 한번 매칭되면 값을 구조 분해 할당하고 새 로컬 변수에 바인딩합니다.
+
+```dart
+// 새 변수 a, b, c를 선언합니다.
+var (a, [b, c]) = ('str', [1, 2]);
+```
+
+패턴 변수 선언은 반드시 var 또는 final로 시작해야하며 그 뒤에 패턴이 뒤따라야 합니다.
+
+
+## 변수 할당 Variable assignment
+
+변수 할당 패턴은 할당의 왼쪽에 있습니다. 먼저 일치하는 객체를 구조 분해 할당합니다. 그런 다음 새 변수에 바인딩하는 대신 존재하는 변수에 값을 할당합니다.
+
+세 번째 임시 변수 선언 없이 두 변수의 값을 바꾸기 위해 변수 할당 패턴을 사용하세요.
+
+```dart
+var (a, b) = ('left', 'right');
+(b, a) = (a, b); // 바꾸기.
+print('$a $b'); // "right left" 출력.
+```
+
+## switch 문과 표현식 Switch statements and expressions
+
+모든 case 절에는 패턴이 포함되어 있습니다. 이는 if-case문과 마찬가지로 switch 문과 표현식에도 적용됩니다. case에서 어떤 종류의 패턴도 사용할 수 있습니다.
+
+case 패턴은 거부될 수 있고 다음 중 하나의 제어 흐름을 허용합니다.
+
+- switch에 들어가는 객체를 매칭하거나 구조 분해 할당.
+
+- 객체가 일치하지 않으면 continue 실행.
+
+case의 패턴이 구조 분해 할당한 값은 로컬 변수가 됩니다. 스코프는 오직 그 case의 바디 내에서만 적용됩니다.
+
+```dart
+switch (obj) {
+  1 == obj면 매칭
+  case 1:
+    print('one');
+
+  // obj의 값이 상수 값 'first'와 'last' 사이이면 매칭
+  case >= first && <= last:
+    print('in range');
+
+  // obj가 두 필드가 있는 레코드이면 매칭하고
+  // 필드를 'a'와 'b'에 할당합니다. 
+  case (var a, var b):
+    print('a = $a, b = $b');
+
+  default:
+}
+```
+
+논리적 or 패턴은 switch 표현식이나 문에서 여러 case를 공유하도록 하는 데 유용합니다.
+
+```dart
+var isPrimary = switch (color) {
+  Color.red || Color.yellow || Color.blue => true,
+  _ => false
+};
+```
+
+switch 문은 논리적 or 패턴 사용없이 여러 case를 공유할 수 있습니다. 그러나 여전히 여러 case가 guard를 공유하는 데 유용합니다:
+
+```dart
+switch (shape) {
+  case Square(size: var s) || Circle(size: var s) when s > 0:
+    print('Non-empty symmetric shape');
+}
+```
+
+guard 절은 조건이 거짓인 경우 switch를 종료하지 않고 임의의 조건을 case의 일부로 평가합니다(case 안의 if문을 사용하는 것처럼).
+
+```dart
+switch (pair) {
+  case (int a, int b):
+    if (a > b) print('First element greater');
+  // 거짓이면 아무것도 출력하지 않고 switch를 종료합니다.
+  case (int a, int b) when a > b:
+    // 거짓이면 아무것도 출력하지 않지만 다음 case를 진행합니다.
+    print('First element greater');
+  case (int a, int b):
+    print('First element not greater');
+}
+```
+
+## for와 for-in 반복문 For and for-in loops
+
+컬렉션 내부의 값을 순회하거나 구조 분해 할당하기 위해서 for와 for-in 내부에서 패턴을 사용할 수 있습니다.
+
+아래의 예시는 <Map>.entries 호출이 반환하는 MapEntry 객체를 구조 분해 할당하여 for-in 내부에서 객체 구조 분해 할당을 사용합니다.
+
+```dart
+Map<String, int> hist = {
+  'a': 23,
+  'b': 100,
+};
+
+for (var MapEntry(key: key, value: count) in hist.entries) {
+  print('$key occurred $count times');
+}
+```
+
+객체 패턴은 hist.entries가 명명된 타입 MapEntry를 가지는지 확인하고 명명된 필드 하위패턴 key와 value로 재귀됩니다.
+
+각 순회 내 MapEntry의 key getter와 value getter를 호출하고 결과를 로컬 변수 key와 count에 바인딩합니다.
+
+getter 호출의 결과를 같은 이름의 변수에 바인딩하는 것은 일반적인 사용 예시입니다. 그래서 객체 패턴은 변수 하위패턴으로부터 getter 이름을 추론할 수 있습니다. 이는 key: key와 같은 불필요한 것을 :key:와 같은 변수 패턴으로 단순화하는 것을 허용합니다.
+
+```dart
+for (var MapEntry(:key, value: count) in hist.entries) {
+  print('$key occurred $count times');
+}
+```
+
+## 패턴의 사용 예시 Use cases for patterns
+
+이전 섹션에서 어떻게 패턴이 다른 Dart 코드의 구조에 적용되는지 설명했습니다. 두 변수의 값을 바꾸거나 map의 키-값 쌍을 구조 분해 할당하는 것처럼 흥미로운 사용 사례를 예시를 통해 봤습니다. 이 섹션은 더 많은 사용 사례를 설명합니다.
+
+- 언제, 왜 패턴을 사용하는 것을 원할지.
+
+- 패턴이 해결하는 문제의 종류가 무엇인지.
+
+- 어떤 관용구가 가장 어울리는지.
+
+## 여러 반환을 구조 분해 할당하기
+
+레코드를 사용하면 단일 함수 호출에서 여러 값을 집계하고 반환할 수 있습니다. 패턴은 함수 호출과 함께 레코드의 필드를 로컬 변수로 직접 분해하는 기능을 추가합니다.
+
+다음과 같이 각 레코드 필드에 대해 새 로컬 변수를 개별적으로 선언하는 대신:
+
+```dart
+var info = userInfo(json);
+var name = info.$1;
+var age = info.$2;
+```
+
+변수 선언 또는 할당 패턴과 하위 패턴인 레코드 패턴을 사용하여 함수가 지역 변수로 반환하는 레코드 필드를 구조 분해 할당할 수 있습니다.
+
+```dart
+var (name, age) = userInfo(json);
+```
+
+패턴을 사용하여 명명된 필드가 있는 레코드를 구조 분해 할당하려면:
+
+```dart
+final (:name, :age) =
+    getData(); // 예를 들어, return (name: 'doug', age: 25);
+```
+
+## 클래스 인스턴스 구조 분해 할당 Destructuring class instances
+
+객체 패턴은 명명된 객체 타입을 매칭하므로 객체 클래스가 이미 노출한 getter를 사용하여 데이터를 구조 분해 할당할 수 있습니다.
+
+클래스의 인스턴스를 구조 분해 할당하려면 명명된 타입을 사용하고 그 뒤에 괄호로 묶어 구조 해제할 속성을 사용합니다.
+
+```dart
+final Foo myFoo = Foo(one: 'one', two: 2);
+var Foo(:one, :two) = myFoo;
+print('one $one, two $two');
+```
+
+## 대수 타입 Algebraic data types
+
+객체 구조 분해 및 switch case는 대수 타입 스타일로 코드를 작성하는 데 도움이 됩니다. 다음과 같은 경우에 이 방법을 사용하세요.
+
+- 관련 타입의 유형이 있을 때.
+
+- 각 타입에 대한 특정한 행동이 필요한 연산이 있을 때.
+
+- 다양한 타입 정의 전체에 분산시키는 대신 한 곳에 그룹화하려고 할 때.
+
+모든 타입에 대한 인스턴스 메서드로 연산을 구현하는 대신 하위 타입을 전환하는 단일 함수에서 연산의 변형을 유지하세요.
+
+```dart
+sealed class Shape {}
+
+class Square implements Shape {
+  final double length;
+  Square(this.length);
+}
+
+class Circle implements Shape {
+  final double radius;
+  Circle(this.radius);
+}
+
+double calculateArea(Shape shape) => switch (shape) {
+      Square(length: var l) => l * l,
+      Circle(radius: var r) => math.pi * r * r
+    };
+```
+
+## JSON 검증 Validating incoming JSON
+
+맵과 리스트 패턴은 JSON 데이터의 키-값 쌍을 구조 분해 할당하는 데 적합합니다.
+
+```dart
+var json = {
+  'user': ['Lily', 13]
+};
+var {'user': [name, age]} = json;
+```
+
+JSON 데이터가 예상한 구조를 가지고 있다는 것을 알고 있다면 이전 예시가 현실적입니다. 그러나 데이터는 일반적으로 네트워크 등 외부 소스에서 제공됩니다. 구조를 확인하려면 먼저 유효성을 검사해야 합니다.
+
+패턴이 없으면 유효성 검사가 길어집니다.
+
+```dart
+if (json is Map<String, Object?> &&
+    json.length == 1 &&
+    json.containsKey('user')) {
+  var user = json['user'];
+  if (user is List<Object> &&
+      user.length == 2 &&
+      user[0] is String &&
+      user[1] is int) {
+    var name = user[0] as String;
+    var age = user[1] as int;
+    print('User $name is $age years old.');
+  }
+}
+```
+
+단일 case 패턴으로 동일한 유효성 검사를 수행할 수 있습니다. 단일 case는 if-case 문으로 가장 잘 작동합니다. 패턴은 보다 선언적이고 덜 장황한 JSON을 검증하는 방법을 제공합니다.
+
+```dart
+if (json case {'user': [String name, int age]}) {
+  print('User $name is $age years old.');
+}
+```
+
+이 case 패턴은 다음을 동시에 검증합니다:
+
+- json이 map인지 확인합니다. 계속 진행하려면 먼저 외부 map 패턴과 일치해야 하기 때문입니다.
+    - 그리고 맵이므로 json이 null이 아닌지도 확인합니다.
+
+- json은 키 user를 포함하는지 확인합니다.
+
+- 키 user가 두 값의 리스트와 쌍을 이루는지 확인합니다.
+
+- 리스트 갑의 타입이 String과 int인지 확인합니다.
+
+- 값을 보유하는 새 로컬 변수가 name과 age인지 확인합니다.
+
+## 패턴 타입 Pattern types
+
+이 페이지는 다양한 종류의 패턴에 대한 참조입니다. 패턴 작동 방식, Dart에서 패턴을 사용할 수 있는 위치 및 일반적인 사용 사례에 대한 개요는 메인 패턴 페이지를 방문하세요.
+
+## 패턴 우선순위 Pattern precedence
+
+연산자 우선 순위와 유사하게 패턴 평가는 우선 순위 규칙을 따릅니다. 괄호로 묶은 패턴을 사용하여 우선순위가 낮은 패턴을 먼저 평가할 수 있습니다.
+
+이 문서는 우선순위가 오름차순으로 패턴 유형이 나열합니다.
+
+- 논리적 or 패턴은 논리적 and보다 낮은 우선 순위를 가지고 논리적 and 패턴은 관계적 패턴보다 낮은 우선 순위를 가지며 그렇게 나아갑니다.
+
+- 후위 단항 패턴 (캐스팅, null 체크, null assert)는 같은 우선 순위를 공유합니다.
+
+- 남은 기본 패턴은 가장 높은 우선 순위를 공유합니다. 컬렉션 타입 (record, list, map)과 Object 패턴은 다른 데이터를 포함하므로 우선 외부 패턴으로 평가됩니다.
+
+## 논리적 or Logical-or
+
+하위패턴1 || 하위패턴2
+
+논리적 or 패턴은은 ||로 하위 패턴을 구분합니다. 분기 중 하나라도 일치하면 일치합니다. 분기는 왼쪽에서 오른쪽으로 평가됩니다. 분기가 일치하면 나머지는 평가되지 않습니다.
+
+```dart
+var isPrimary = switch (color) {
+  Color.red || Color.yellow || Color.blue => true,
+  _ => false
+};
+```
+
+논리적 or 패턴의 하위 패턴은 변수를 바인딩할 수 있지만 패턴이 일치하면 하나의 분기만 평가되므로 분기는 동일한 변수 집합을 정의해야 합니다.
+
+## 논리적 and Logical-and
+
+하위패턴1 && 하위패턴2
+
+&&로 구분된 패턴 쌍은 두 하위 패턴이 모두 일치하는 경우에만 일치합니다. 왼쪽 분기가 일치하지 않으면 오른쪽 분기가 평가되지 않습니다.
+
+논리적 and 패턴의 하위 패턴은 변수를 바인딩할 수 있지만, 각 하위 패턴의 변수는 패턴이 일치하는 경우 둘 다 바인딩되므로 겹쳐서는 안 됩니다.
+
+```dart
+switch ((1, 2)) {
+  // 오류, 두 서브패턴이 'b'를 바인딩하려고 시도함.
+  case (var a, var b) && (var b, var c): // ...
+}
+```
+
+## 관계적 패턴 Relational
+
+== 표현식
+
+< 표현식
+
+관계적 패턴은 동등 또는 관계 연산자(==, !=, <, >, <= 및 >=)를 사용하여 일치하는 값을 지정된 상수와 비교합니다.
+
+상수를 인자로 사용하여 일치하는 값에 대해 적절한 연산자를 호출하면 패턴이 일치하여 true를 반환합니다.
+
+관계적 패턴은 특히 논리적 and 패턴과 결합된 경우 숫자 범위를 일치시키는 데 유용합니다.
+
+```dart
+String asciiCharType(int char) {
+  const space = 32;
+  const zero = 48;
+  const nine = 57;
+
+  return switch (char) {
+    < space => 'control',
+    == space => 'space',
+    > space && < zero => 'punctuation',
+    >= zero && <= nine => 'digit',
+    _ => ''
+  };
+}
+```
+
+## 캐스팅 Cast
+
+foo as String
+
+캐스팅 패턴을 사용하면 값을 다른 하위 패턴에 전달하기 전에 구조 분해 할당중에 타입 캐스트를 삽입할 수 있습니다.
+
+```dart
+(num, Object) record = (1, 's');
+var (i as int, s as String) = record;
+```
+
+값에 명시된 타입이 없으면 캐스트 패턴은 예외를 발생시킵니다. null-assert 패턴과 마찬가지로 이 패턴을 사용하면 일부 구조 분해 할당된 값의 예상 유형을 강제로 assert할 수 있습니다.
+
+## Null 검사 Null-check
+
+하위패턴?
+
+Null 검사 패턴은 값이 null이 아닌 경우 먼저 매칭한 다음 동일한 값에 대해 내부 패턴을 매칭시킵니다. 일치하는 null 허용 값의 null 허용이 아닌 기본 타입인 변수를 바인딩할 수 있습니다.
+
+예외 발생없이 null 값을 매칭 실패로 처리하려면 null 검사 패턴을 사용하세요.
+
+```dart
+String? maybeString = 'nullable with base type String';
+switch (maybeString) {
+  case var s?:
+  // 's'는 null 비허용 문자열 타입을 가집니다.
+}
+```
+
+값이 null일 때 매칭하려면 상수 패턴 null을 사용하세요.
+
+
+## Null-assert
+
+하위패턴!
+
+null-assert 패턴은 객체가 null이 아닌 경우 먼저 매칭한 다음 값에 매칭합니다. null이 아닌 값의 흐름을 허용하지만 일치하는 값이 null이면 예외를 발생시킵니다.
+
+null 값이 자동으로 일치 실패로 처리되지 않도록 하려면 매칭하는 동안 null-assert 패턴을 사용하세요.
+
+```dart
+List<String?> row = ['user', null];
+switch (row) {
+  case ['user', var name!]: // ...
+  // `name'은 널 비허용 문자열입니다.
+}
+```
+
+변수 선언 패턴에서 null 값을 제거하려면 null-assert 패턴을 사용하세요.
+
+```dart
+(int?, int?) position = (2, 3);
+
+var (x!, y!) = position;
+```
+
+값이 null일 때 일치시키려면 상수 패턴 null을 사용하세요.
+
+## 상수 Constant
+
+123, null, 'string', math.pi, SomeClass.constant, const Thing(1, 2), const (1 + 2)
+
+값이 상수와 같을 때 상수 패턴이 일치합니다.
+
+```dart
+switch (number) {
+  // 1 == number 일때 매칭합니다.
+  case 1: // ...
+}
+```
+
+간단한 리터럴과 명명된 상수에 대한 참조를 직접 상수 패턴으로 사용할 수 있습니다.
+
+- 숫자 리터럴 (123, 45.56)
+
+- 부울 리터럴 (true)
+
+- 문자열 리터럴 ('string')
+
+- 명명된 상수 (someConstant, math.pi, double.infinity)
+
+- 상수 생성자 (const Point(0, 0))
+
+- 상수 컬렉션 리터럴 (const [], const {1, 2})
+
+보다 복잡한 상수 표현식은 괄호로 묶고 const(const (1 + 2))에 접두사를 붙여야 합니다.
+
+```dart
+// 리스트 또는 맵 패턴:
+case [a, b]: // ...
+
+// 리스트 또는 맵 리터럴:
+case const [a, b]: // ...
+```
+
+## 변수 Variable
+
+var bar, String str, final int _
+
+변수 패턴은 새 변수에 매칭되거나 구조 분해 할당된 값에 바인딩합니다. 일반적으로 구조 분해 할당된 값을 캡처하기 위한 구조 분해 할당 패턴의 일부로 발생합니다.
+
+변수는 패턴이 일치하는 경우에만 도달할 수 있는 코드 영역의 스코프 내에 있습니다.
+
+```dart
+switch ((1, 2)) {
+  // 'var a'와 'var b'는 1과 2에 바인딩하는 변수 패턴입니다.
+  case (var a, var b): // ...
+  // 'a'와 'b'는 case 내부 스코프에 있습니다.
+}
+```
+
+타입이 있는 변수 패턴은 매칭된 값에 선언된 타입이 있는 경우에만 매칭되고 그렇지 않으면 실패합니다:
+
+```dart
+switch ((1, 2)) {
+  // 매칭되지 않음.
+  case (int a, String b): // ...
+}
+```
+
+와일드카드 패턴을 변수 패턴으로 사용할 수 있습니다.
+
+## 식별자 Identifier
+
+foo, _
+
+식별자 패턴은 나타나는 상황에 따라 상수 패턴이나 변수 패턴처럼 동작할 수 있습니다.
+
+- 선언 컨텍스트: 식별자 이름을 사용하여 새 변수를 선언합니다: var (a, b) = (1, 2);
+
+- 할당 컨텍스트: 식별자 이름이 있는 기존 변수에 할당: (a, b) = (3, 4);
+
+- 매칭 컨텍스트: 명명된 상수 패턴으로 처리됩니다(이름이 _가 아닌 경우).
+
+    ```dart
+    const c = 1;
+    switch (2) {
+    case c:
+        print('match $c');
+    default:
+        print('no match'); // "no match" 출력.
+    }
+    ```
+
+- 모든 컨텍스트의 와일드카드 식별자: 모든 값과 매칭하고 이를 삭제합니다. case [_, var y, _]: print('The middle element is $y');
+
+
+## 괄호로 묶기 Parenthesized
+
+(하위패턴)
+
+괄호로 묶인 표현식과 마찬가지로 패턴의 괄호를 사용하면 패턴 우선 순위를 제어하고 우선 순위가 더 높을 것으로 예상되는 곳에 우선 순위가 낮은 패턴을 삽입할 수 있습니다.
+
+예를 들어 부울 상수 x, y, z가 각각 true, true, false와 같다고 가정해 보세요. 다음 예는 부울 표현식 평가와 유사하지만 패턴과 일치합니다.
+
+```dart
+// ...
+x || y => 'true 일치',
+x || y && z => 'true 일치',
+x || (y && z) => 'true 일치',
+// `x || y && z` 는 `x || (y && z)`과 같습니다.
+(x || y) && z => '일치 없음',
+// ...
+```
+
+다트는 왼쪽에서 오른쪽으로 패턴 매칭을 시작합니다.
+
+1. 첫 번째 패턴은 x가 true와 일치하므로 true와 일치합니다.
+
+2. 두 번째 패턴은 x가 true와 일치하므로 true와 일치합니다.
+
+3. 세 번째 패턴은 x가 true와 일치하므로 true와 일치합니다.
+
+4. 네 번째 패턴 (x || y) && z에는 아무것도 일치하지 않습니다.
+
+## 리스트 List
+
+[하위패턴1, 하위패턴2]
+
+리스트 패턴은 리스트를 구현하는 값과 매칭한 다음 해당 하위 패턴을 리스트 요소와 재귀적으로 매칭해 위치별로 구조 분해 할당합니다.
+
+```dart
+const a = 'a';
+const b = 'b';
+switch (obj) {
+  // 리스트 패턴 [a, b]는 obj가 두 개의 필드가 있는 리스트인 경우 먼저 obj와 매칭합니다.
+  // 그런 다음 해당 필드가 상수 하위 패턴 'a' 및 'b'와 일치하면 매칭합니다.
+  case [a, b]:
+    print('$a, $b');
+}
+```
+
+리스트 패턴에서는 패턴의 요소 수가 전체 리스트와 일치해야 합니다. 그러나 나머지 요소를 자리 표시자로 사용하여 리스트의 요소 수에 관계없이 설명할 수 있습니다.
+
+## 나머지 요소 Rest element
+
+리스트 패턴에는 임의 길이의 목록 일치를 허용하는 하나의 나머지 요소(...)가 포함될 수 있습니다.
+
+```dart
+var [a, b, ..., c, d] = [1, 2, 3, 4, 5, 6, 7];
+// "1 2 6 7" 출력.
+print('$a $b $c $d');
+```
+
+나머지 요소에는 리스트의 다른 하위 패턴과 일치하지 않는 요소를 새 리스트로 수집하는 하위 패턴이 있을 수도 있습니다.
+
+```dart
+var [a, b, ...rest, c, d] = [1, 2, 3, 4, 5, 6, 7];
+// "1 2 [3, 4, 5] 6 7" 출력.
+print('$a $b $rest $c $d');
+```
+
+## 맵 Map
+
+{"key": 하위패턴1, 어떤상수: 하위패턴2}
+
+맵 패턴은 Map을 구현하는 값과 매칭한 다음 해당 하위 패턴을 맵의 키와 반복적으로 매칭시켜 구조 분해 할당합니다.
+
+맵 패턴에서는 패턴이 전체 맵과 일치할 필요가 없습니다. 맵 패턴은 패턴과 일치하지 않는 맵에 포함된 모든 키를 무시합니다.
+
+## 레코드 Record
+
+(하위패턴, 하위패턴2)
+
+(x: 하위패턴1, y: 하위패턴2)
+
+레코드 패턴은 레코드 객체와 매칭하고 해당 필드를 구조 분해 할당합니다. 값이 패턴과 동일한 모양의 레코드가 아닌 경우 매칭이 실패합니다. 그렇지 않으면 필드 하위 패턴이 레코드의 해당 필드와 매칭됩니다.
+
+레코드 패턴에서는 패턴이 전체 레코드와 매칭되어야 합니다. 패턴을 사용하여 명명된 필드가 있는 레코드를 구조 분해 할당하려면 패턴에 필드 이름을 포함하십시오.
+
+```dart
+var (myString: foo, myNumber: bar) = (myString: 'string', myNumber: 1);
+```
+
+getter 이름은 생략할 수 있으며 필드 하위 패턴의 변수 패턴 또는 식별자 패턴에서 추론할 수 있습니다. 다음 패턴 쌍은 각각 동일합니다.
+
+```dart
+// 변수 하위 패턴을 사용한 레코드 패턴:
+var (untyped: untyped, typed: int typed) = record;
+var (:untyped, :int typed) = record;
+
+switch (record) {
+  case (untyped: var untyped, typed: int typed): // ...
+  case (:var untyped, :int typed): // ...
+}
+
+// null 검사와 null-assert 하위패턴을 사용한 레코드 패턴:
+switch (record) {
+  case (checked: var checked?, asserted: var asserted!): // ...
+  case (:var checked?, :var asserted!): // ...
+}
+
+// Record pattern with cast subpattern 캐스팅 하위패턴을 사용한 레코드 패턴:
+var (untyped: untyped as int, typed: typed as String) = record;
+var (:untyped as int, :typed as String) = record;
+```
+
+## 객체 Object
+
+SomeClass(x: 하위패턴1, y: 하위패턴2)
+
+객체 패턴은 지정된 명명된 타입과 일치하는 값을 확인하여 객체 속성에 대한 getter를 사용하여 데이터를 구조 분해 할당합니다. 값의 타입이 동일하지 않으면 거부됩니다.
+
+```dart
+switch (shape) {
+  // 타입이 Rect 타입인 경우 매칭하고 Rect의 속성과 매칭합니다.
+  case Rect(width: var w, height: var h): // ...
+}
+```
+
+getter 이름은 생략할 수 있으며 필드 하위 패턴의 변수 패턴 또는 식별자 패턴에서 추론할 수 있습니다.
+
+```dart
+// 새 변수 x 및 y를 Point의 x 및 y 속성 값에 바인딩합니다.
+var Point(:x, :y) = Point(1, 2);
+```
+
+객체 패턴에서는 패턴이 전체 객체와 일치할 필요가 없습니다. 객체에 패턴이 구조 분해 할당되지 않는 추가 필드가 있는 경우에도 여전히 일치할 수 있습니다.
+
+## 와일드카드 Wildcard
+
+_
+
+_라는 패턴은 어떤 변수에도 바인딩되거나 할당되지 않는 와일드카드(변수 패턴 또는 식별자 패턴)입니다.
+
+나중에 위치 값을 구조 분해 할당하기 위해 하위 패턴이 필요한 위치에서 자리 표시자로 유용합니다.
+
+```dart
+var list = [1, 2, 3];
+var [_, two, _] = list;
+```
+
+타입 주석이 있는 와일드카드 이름은 값의 타입을 테스트하려고 하지만 값을 이름에 바인딩하지 않으려는 경우에 유용합니다.
+
+```dart
+switch (record) {
+  case (int _, String _):
+    print('First field is int and second is String.');
+}
+```
