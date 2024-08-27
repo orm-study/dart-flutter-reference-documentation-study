@@ -1,0 +1,313 @@
+# 핫 리로드 Hot reload
+
+Flutter의 핫 리로드 기능을 사용하면 빠르고 쉽게 실험하고, UI를 구축하고, 기능을 추가하고, 버그를 수정할 수 있습니다. 핫 리로드는 업데이트된 소스 코드 파일을 실행 중인 Dart 가상 머신(VM)에 주입하여 작동합니다. VM이 새 버전의 필드와 함수로 클래스를 업데이트하면 Flutter 프레임워크가 자동으로 위젯 트리를 다시 빌드하므로 변경 사항의 효과를 빠르게 확인할 수 있습니다.
+
+## 핫 리로드를 수행하는 방법 How to perform a hot reload
+
+Flutter 앱을 핫 리로드하려면:
+
+1. 지원되는 Flutter 편집기 또는 터미널 창에서 앱을 실행하세요. 물리적 장치 또는 가상 장치가 대상이 될 수 있습니다. 디버그 모드의 Flutter 앱만 핫 리로드 또는 핫 리스타트할 수 있습니다.
+
+2. 프로젝트에서 Dart 파일 중 하나를 수정하세요. 대부분의 코드 변경 유형은 핫 리로드될 수 있습니다. 핫 리스타트가 필요한 변경 사항 목록은 특별 사례를 참조하세요.
+
+3. Flutter의 IDE 도구를 지원하는 IDE/편집기에서 작업하는 경우 모두 저장(cmd-s/ctrl-s)을 선택하거나 도구 모음에서 핫 리로드 버튼을 클릭하세요.
+
+flutter run을 사용하여 명령줄에서 앱을 실행하는 경우 터미널 창에 r을 입력합니다.
+
+핫 리로드 작업이 성공적으로 완료되면 콘솔에 다음과 유사한 메시지가 표시됩니다.
+
+```
+Performing hot reload...
+Reloaded 1 of 448 libraries in 978ms.
+```
+
+변경 사항을 반영하여 앱이 업데이트되고 앱의 현재 상태가 유지됩니다. 앱은 핫 리로드 명령을 실행하기 전의 위치에서 계속 실행됩니다. 코드 업데이트 및 실행이 계속됩니다.
+
+```
+핫 리로드, 핫 리스타트, 풀 리스타트의 차이점은 무엇일까요?
+
+- 핫 리로드는 코드 변경 사항을 VM에 로드하고 위젯 트리를 다시 빌드하여 앱 상태를 유지합니다. main() 또는 initState()를 다시 실행하지 않습니다. (Intellij 및 Android Studio에서는 ⌘\, VSCode에서는 ⌃F5)
+
+
+- 핫 리스타트는 코드 변경 사항을 VM에 로드하고 Flutter 앱을 다시 시작하여 앱 상태를 잃습니다. (IntelliJ 및 Android Studio에서는 ⇧⌘\, VSCode에서는 ⇧⌘F5)
+
+- 풀 리스타트 iOS, Android 또는 웹 앱을 다시 시작합니다. Java/Kotlin/Objective-C/Swift 코드도 다시 컴파일하기 때문에 시간이 더 오래 걸립니다. 웹에서는 Dart Development Compiler도 다시 시작합니다. 이에 대한 특정 키보드 단축키는 없습니다. 실행 구성을 중지하고 시작해야 합니다.
+
+Flutter 웹은 현재 핫 리스타트를 지원하지만 핫 리로드는 지원하지 않습니다.
+```
+
+Android Studio에서 실행, 디버그 실행, 핫 리로드 및 핫 재시작 제어
+
+코드 변경은 수정된 Dart 코드가 변경 후 다시 실행되는 경우에만 눈에 보이는 효과를 갖습니다. 특히 핫 리로드로 인해 기존 위젯이 모두 다시 빌드됩니다. 위젯 재구축과 관련된 코드만 자동으로 다시 실행됩니다. 예를 들어, main() 및 initState() 함수는 다시 실행되지 않습니다.
+
+## 특별 사례 Special cases
+
+다음 섹션에서는 핫 리로드와 관련된 특정 시나리오를 설명합니다. 경우에 따라 Dart 코드를 약간 변경하면 앱에 핫 리로드를 계속 사용할 수 있습니다. 다른 경우에는 핫 재시작 또는 전체 재시작이 필요합니다.
+
+## 앱이 종료됨 An app is killed
+
+앱이 종료되면 핫 리로드가 중단될 수 있습니다. 예를 들어 앱이 너무 오랫동안 백그라운드에 있었던 경우입니다.
+
+## 컴파일 에러 Compilation errors
+
+코드 변경으로 인해 컴파일 오류가 발생하면 핫 리로드는 다음과 유사한 오류 메시지를 생성합니다.
+
+```
+Hot reload was rejected:
+'/path/to/project/lib/main.dart': warning: line 16 pos 38: unbalanced '{' opens here
+  Widget build(BuildContext context) {
+                                     ^
+'/path/to/project/lib/main.dart': error: line 33 pos 5: unbalanced ')'
+    );
+    ^
+```
+
+이런 상황에서는 핫 리로드를 계속 사용하려면 Dart 코드의 지정된 줄에서 오류를 수정하기만 하면 됩니다.
+
+## CupertinoTabView의 builder CupertinoTabView's builder
+
+핫 리로드는 CupertinoTabView 빌더에 대한 변경 사항을 적용하지 않습니다. 자세한 내용은 이슈 43574를 참조하세요.
+
+## 열거형 Enumerated types
+
+열거형이 일반 클래스로 변경되거나 일반 클래스가 열거형으로 변경되면 핫 리로드가 작동하지 않습니다.
+
+예를 들어:
+
+바뀌기 전:
+
+```dart
+enum Color {
+  red,
+  green,
+  blue,
+}
+```
+
+바뀐 후:
+
+```dart
+class Color {
+  Color(this.i, this.j);
+  final int i;
+  final int j;
+}
+```
+
+## 제네릭 타입
+
+제네릭 타입 선언이 수정되면 핫 리로드가 작동하지 않습니다. 예를 들어 다음은 작동하지 않습니다.
+
+바뀌기 전 :
+
+```dart
+class A<T> {
+  T? i;
+}
+```
+
+바뀐 후 :
+
+```dart
+class A<T, V> {
+  T? i;
+  V? v;
+}
+```
+
+## 네이티브 코드 Native code
+
+네이티브 코드(예: Kotlin, Java, Swift 또는 Objective-C)를 변경한 경우 변경 사항이 적용되는지 확인하려면 풀 리스타트(앱 중지 및 다시 시작)를 수행해야 합니다.
+
+## 이전 상태는 새 코드와 결합됩니다 Previous state is combined with new code
+
+Flutter의 stateful 핫 리로드는 앱의 상태를 보존합니다. 이 접근 방식을 사용하면 현재 상태를 버리지 않고 가장 최근 변경 내용의 효과만 볼 수 있습니다. 예를 들어 앱에서 사용자 로그인을 요구하는 경우 로그인 자격 증명을 다시 입력하지 않고도 네비게이션 계층 구조에서 여러 수준 아래로 페이지를 수정하고 핫 리로드할 수 있습니다. 상태는 유지되며 이는 일반적으로 원하는 동작입니다.
+
+코드 변경 사항이 앱 상태(또는 해당 종속성)에 영향을 미치는 경우 앱에서 작업해야 하는 데이터는 처음부터 실행했을 경우의 데이터와 완전히 일치하지 않을 수 있습니다. 결과적으로 핫 리로드와 핫 리스타트 후 동작이 다를 수 있습니다.
+
+## 최근 코드 변경 사항이 포함되지만 앱 상태는 제외됩니다. Recent code change is included but app state is excluded
+
+Dart에서는 정적 필드가 느리게 초기화됩니다. 즉, Flutter 앱을 처음 실행하고 정적 필드를 읽을 때 이니셜라이저가 평가된 값으로 설정된다는 의미입니다. 전역 변수와 정적 필드는 상태로 처리되므로 핫 리로드 중에 다시 초기화되지 않습니다.
+
+전역 변수 및 정적 필드의 이니셜라이저를 변경하는 경우 변경 사항을 확인하려면 핫 재시작 또는 이니셜라이저가 유지되는 상태를 다시 시작해야 합니다. 예를 들어 다음 코드를 고려해보세요.
+
+```dart
+final sampleTable = [
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T1')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T2')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T3')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T4')],
+      )
+    ],
+  ),
+];
+```
+
+앱을 실행한 후 다음과 같이 변경합니다.
+
+```dart
+final sampleTable = [
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T1')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T2')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T3')],
+      )
+    ],
+  ),
+  Table(
+    children: const [
+      TableRow(
+        children: [Text('T10')], // 수정됨
+      )
+    ],
+  ),
+];
+```
+
+핫 리로드했지만 변경 사항이 반영되지 않습니다.
+
+반대로 다음 예에서는 다음과 같습니다:
+
+```dart
+const foo = 1;
+final bar = foo;
+
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+처음으로 앱을 실행하면 1과 1이 출력됩니다. 그런 다음 다음과 같이 변경합니다.
+
+```dart
+const foo = 2; // 수정됨
+final bar = foo;
+
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+const 필드 값에 대한 변경 사항은 항상 핫 리로드되지만 정적 필드 이니셜라이저는 다시 실행되지 않습니다. 개념적으로 const 필드는 상태 대신 별칭처럼 처리됩니다.
+
+Dart VM은 일련의 변경 사항을 적용하기 위해 핫 리스타트가 필요할 때 이니셜라이저 변경 사항과 플래그를 감지합니다. 플래그 지정 메커니즘은 위 예의 대부분의 초기화 작업에 대해 트리거되지만 다음과 같은 경우에는 트리거되지 않습니다.
+
+```dart
+final bar = foo;
+```
+
+foo를 업데이트하고 핫 리로드 후 변경 사항을 보려면 final을 사용하는 대신 필드를 const로 다시 정의하거나 getter를 사용하여 값을 반환하는 것이 좋습니다. 예를 들어 다음 솔루션 중 하나가 작동합니다.
+
+```dart
+const foo = 1;
+const bar = foo; // foo를 const로 변환...
+
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+```dart
+const foo = 1;
+int get bar => foo; // ...또는 getter를 제공.
+
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+자세한 내용은 Dart의 const 키워드와 final 키워드의 차이점을 읽어보세요.
+
+## 최근 UI 변경 사항은 제외됩니다.
+
+핫 리로드 작업이 성공한 것으로 나타나고 예외가 생성되지 않는 경우에도 새로 고친 UI에 일부 코드 변경 사항이 표시되지 않을 수 있습니다. 이 동작은 앱의 main() 또는 initState() 메서드를 변경한 후에 흔히 발생합니다.
+
+일반적으로 수정된 코드가 루트 위젯의 build() 메서드 다운스트림인 경우 핫 리로드는 예상대로 작동합니다. 그러나 위젯 트리를 다시 빌드한 결과 수정된 코드가 다시 실행되지 않으면 핫 리로드 후에 그 효과를 볼 수 없습니다.
+
+예를 들어 다음 코드를 고려해보세요:
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: () => print('tapped'));
+  }
+}
+```
+
+이 앱을 실행한 후 다음과 같이 코드를 변경합니다.
+
+```dart
+import 'package:flutter/widgets.dart';
+
+void main() {
+  runApp(const Center(child: Text('Hello', textDirection: TextDirection.ltr)));
+}
+```
+
+핫 리스타트를 사용하면 프로그램이 처음부터 시작되어 새 버전의 main()을 실행하고 Hello라는 텍스트를 표시하는 위젯 트리를 구축합니다.
+
+그러나 이 변경 후 앱을 핫 리로드하면 main() 및 initState()가 다시 실행되지 않고 변경되지 않은 MyApp 인스턴스를 루트 위젯으로 사용하여 위젯 트리가 다시 빌드됩니다. 이로 인해 핫 리로드 후에 눈에 띄는 변화가 없습니다.
+
+## 작동 원리 How it works
+
+핫 리로드가 호출되면 호스트 시스템은 마지막 컴파일 이후 편집된 코드를 확인합니다. 다음 라이브러리가 다시 컴파일됩니다.
+
+- 변경된 코드가 있는 모든 라이브러리
+
+- 애플리케이션의 메인 라이브러리
+
+- 메인 라이브러리에 영향을 받는 라이브러리
+
+해당 라이브러리의 소스 코드는 커널 파일로 컴파일되어 모바일 장치의 Dart VM으로 전송됩니다.
+
+Dart VM은 새 커널 파일에서 모든 라이브러리를 다시 로드합니다. 지금까지 코드가 다시 실행되지 않았습니다.
+
+그런 다음 핫 리로드 메커니즘은 Flutter 프레임워크가 모든 기존 위젯 및 렌더링 객체의 재구축/재배치/다시 그리기를 트리거하도록 합니다.
