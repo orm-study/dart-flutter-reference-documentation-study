@@ -26,4 +26,4 @@
 | 10주 차 | 2024.08.06. | - https://docs.flutter.dev/ui/layout/constraints | 2024.08.15. | 2024.08.22. |
 | 11주 차 | 2024.08.15. | - https://docs.flutter.dev/ui/layout/constraints </br> - https://docs.flutter.dev/tools/hot-reload | 2024.08.22. | 2024.08.29. |
 | 12주 차 | 2024.08.22. | - https://docs.flutter.dev/data-and-backend/state-mgmt | 2024.08.29. | 2024.09.05. |
-
+| 13주 차 | 2024.08.29. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.05. | 2024.09.12. |
