@@ -14,16 +14,16 @@
 ## 일정
 | 주 차 | 시작일 | 학습 주제 | 구술시험 및 발표일 | 복습용 필기시험일 |
 | --- | --- | --- | --- | --- |
-| 1주 차 | 2024.06.04. | - https://dart.dev/codelabs/iterables </br> - https://dart.dev/language/generics | 2024.06.11. | 2024.06.18. |
-| 2주 차 | 2024.06.11. | - https://dart.dev/language/type-system </br> - https://dart.dev/language/pattern-types | 2024.06.18. | 2024.06.25. |
-| 3주 차 | 2024.06.18. | - https://dart.dev/language/error-handling </br> - https://dart.dev/language/classes | 2024.06.25. | 2024.07.02. |
-| 4주 차 | 2024.06.25. | - https://dart.dev/language/classes | 2024.07.02. | 2024.07.09. |
-| 5주 차 | 2024.07.02. | - https://dart.dev/language/class-modifiers | 2024.07.09. | 2024.07.16. |
-| 6주 차 | 2024.07.09. | - https://dart.dev/libraries/async/async-await | 2024.07.16. | 2024.07.23. |
-| 7주 차 | 2024.07.16. | - https://dart.dev/language/concurrency | 2024.07.23. | 2024.07.30. |
-| 8주 차 | 2024.07.23. | - https://dart.dev/language/isolates </br> - https://docs.flutter.dev/perf/isolates </br> - https://docs.flutter.dev/cookbook/networking/background-parsing | 2024.07.30. | 2024.08.06. |
-| 9주 차 | 2024.07.30. | - https://docs.flutter.dev/ui/layout | 2024.08.06. | 2024.08.15. |
-| 10주 차 | 2024.08.06. | - https://docs.flutter.dev/ui/layout/constraints | 2024.08.15. | 2024.08.22. |
-| 11주 차 | 2024.08.15. | - https://docs.flutter.dev/ui/layout/constraints </br> - https://docs.flutter.dev/tools/hot-reload | 2024.08.22. | 2024.08.29. |
-| 12주 차 | 2024.08.22. | - https://docs.flutter.dev/data-and-backend/state-mgmt | 2024.08.29. | 2024.09.05. |
-| 13주 차 | 2024.08.29. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.05. | 2024.09.12. |
+| 1 | 2024.06.04. | - https://dart.dev/codelabs/iterables </br> - https://dart.dev/language/generics | 2024.06.11. | 2024.06.18. |
+| 2 | 2024.06.11. | - https://dart.dev/language/type-system </br> - https://dart.dev/language/pattern-types | 2024.06.18. | 2024.06.25. |
+| 3 | 2024.06.18. | - https://dart.dev/language/error-handling </br> - https://dart.dev/language/classes | 2024.06.25. | 2024.07.02. |
+| 4 | 2024.06.25. | - https://dart.dev/language/classes | 2024.07.02. | 2024.07.09. |
+| 5 | 2024.07.02. | - https://dart.dev/language/class-modifiers | 2024.07.09. | 2024.07.16. |
+| 6 | 2024.07.09. | - https://dart.dev/libraries/async/async-await | 2024.07.16. | 2024.07.23. |
+| 7 | 2024.07.16. | - https://dart.dev/language/concurrency | 2024.07.23. | 2024.07.30. |
+| 8 | 2024.07.23. | - https://dart.dev/language/isolates </br> - https://docs.flutter.dev/perf/isolates </br> - https://docs.flutter.dev/cookbook/networking/background-parsing | 2024.07.30. | 2024.08.06. |
+| 9 | 2024.07.30. | - https://docs.flutter.dev/ui/layout | 2024.08.06. | 2024.08.15. |
+| 10 | 2024.08.06. | - https://docs.flutter.dev/ui/layout/constraints | 2024.08.15. | 2024.08.22. |
+| 11 | 2024.08.15. | - https://docs.flutter.dev/ui/layout/constraints </br> - https://docs.flutter.dev/tools/hot-reload | 2024.08.22. | 2024.08.29. |
+| 12 | 2024.08.22. | - https://docs.flutter.dev/data-and-backend/state-mgmt | 2024.08.29. | 2024.09.05. |
+| 13 | 2024.08.29. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.05. | 2024.09.12. |
