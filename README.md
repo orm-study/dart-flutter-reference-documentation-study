@@ -27,4 +27,5 @@
 | 11 | 2024.08.15. | - https://docs.flutter.dev/ui/layout/constraints </br> - https://docs.flutter.dev/tools/hot-reload | 2024.08.22. | 2024.08.29. |
 | 12 | 2024.08.22. | - https://docs.flutter.dev/data-and-backend/state-mgmt | 2024.08.29. | 2024.09.05. |
 | 13 | 2024.08.29. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.05. | 2024.09.12. |
-| 14, 15 | 2024.09.05. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.19. | 2024.09.26. |
+| 14, 15 | 2024.09.05. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.19. | 2024.10.03. |
+| 16, 17 | 2024.09.19. | - https://docs.flutter.dev/resources/architectural-overview </br> - BuildContext </br> - Key | 2024.10.03. | 2024.10.17. |
