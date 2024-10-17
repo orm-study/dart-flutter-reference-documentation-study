@@ -29,3 +29,4 @@
 | 13 | 2024.08.29. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.05. | 2024.09.12. |
 | 14, 15 | 2024.09.05. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.19. | 2024.10.03. |
 | 16, 17 | 2024.09.19. | - https://docs.flutter.dev/resources/architectural-overview </br> - BuildContext </br> - Key | 2024.10.03. | 2024.10.17. |
+| 18, 19 | 2024.10.03. | - https://docs.flutter.dev/tools/devtools | 2024.10.17. | 2024.10.31. |
