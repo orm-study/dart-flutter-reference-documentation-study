@@ -30,3 +30,6 @@
 | 14, 15 | 2024.09.05. | - https://docs.flutter.dev/resources/architectural-overview | 2024.09.19. | 2024.10.03. |
 | 16, 17 | 2024.09.19. | - https://docs.flutter.dev/resources/architectural-overview </br> - BuildContext </br> - Key | 2024.10.03. | 2024.10.17. |
 | 18, 19 | 2024.10.03. | - https://docs.flutter.dev/tools/devtools | 2024.10.17. | 2024.10.31. |
+| 20, 21 | 2024.10.17. | - https://docs.flutter.dev/perf </br> - https://docs.flutter.dev/perf/appendix  | 2024.10.31. | 없음 |
+| 22, 23 | 2024.10.31. | - https://docs.flutter.dev/perf/best-practices </br> - https://docs.flutter.dev/perf/rendering-performance | 2024.11.14. | 없음 |
+| 24, 25 | 2024.11.14. | - https://docs.flutter.dev/perf/app-size </br> - https://docs.flutter.dev/perf/ui-performance | 2024.11.28. | 없음 |
